@@ -1,0 +1,1076 @@
+// Universal CRM — Complete V1 Prisma Schema
+// ADR-015: Prisma 5.x (stable)
+// ADR-007: Row-level tenant isolation via companyId on all tenant-owned entities
+// ADR-015: Soft delete via deletedAt on CRM entities
+//
+// IMPORTANT: This schema defines ALL V1 entities upfront.
+// Schema changes later are expensive. Every V1 entity is defined here.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// =============================================================================
+// ENUMS
+// =============================================================================
+
+enum CompanyStatus {
+  ACTIVE
+  SUSPENDED
+}
+
+enum UserStatus {
+  INVITED
+  ACTIVE
+  DISABLED
+}
+
+enum DataScope {
+  OWN
+  TEAM
+  COMPANY
+  PLATFORM
+}
+
+enum OfferingType {
+  PRODUCT
+  SERVICE
+}
+
+enum LeadPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum TaskType {
+  FOLLOW_UP
+  GENERAL
+}
+
+enum TaskStatus {
+  PENDING
+  OVERDUE
+  COMPLETED
+  CANCELLED
+}
+
+enum TaskLifecycleEventType {
+  CREATED
+  RESCHEDULED
+  COMPLETED
+  CANCELLED
+  MARKED_OVERDUE
+  REOPENED
+}
+
+enum TaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum ActivityType {
+  LEAD_CREATED
+  LEAD_UPDATED
+  LEAD_DELETED
+  STATUS_CHANGED
+  ASSIGNED
+  REASSIGNED
+  NOTE_ADDED
+  NOTE_UPDATED
+  NOTE_DELETED
+  TASK_CREATED
+  TASK_UPDATED
+  TASK_COMPLETED
+  TASK_CANCELLED
+  TASK_DELETED
+  CALL
+  WHATSAPP
+  EMAIL
+  NOTE
+  MEETING
+  DISPOSITION_CHANGED
+  TASK_RESCHEDULED
+}
+
+// =============================================================================
+// PLATFORM — SUPER ADMIN
+// Super Admin has NO company context.
+// Stored in a completely separate table — cannot accidentally behave as tenant user.
+// ADR per PRD §8: Super Admin is NOT a normal company user.
+// =============================================================================
+
+model SuperAdmin {
+  id             String              @id @default(cuid())
+  email          String              @unique
+  hashedPassword String
+  name           String
+  isActive       Boolean             @default(true)
+  lastLoginAt    DateTime?
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+  deletedAt      DateTime?
+
+  sessions       SuperAdminSession[]
+  auditLogs      PlatformAuditLog[]
+
+  @@map("super_admins")
+}
+
+// =============================================================================
+// COMPANY (TENANT ROOT)
+// Every tenant-owned entity references this via companyId.
+// company.status drives session/API access control.
+// =============================================================================
+
+model Company {
+  id        String        @id @default(cuid())
+  name      String
+  slug      String        @unique
+  status    CompanyStatus @default(ACTIVE)
+  email     String?
+  phone     String?
+  website   String?
+  logoUrl   String?
+  timezone  String        @default("UTC")
+  currency  String        @default("USD")
+  dateFormat String       @default("YYYY-MM-DD")
+  defaultCountryCode String @default("IN")
+  allowSalesPriceOverride     Boolean  @default(true)
+  customerDirectoryVisibility String   @default("DATA_SCOPE") // "DATA_SCOPE" | "COMPANY"
+  createEnquiryHistoryEnabled Boolean  @default(true)
+  historyPreviewFields        Json?
+
+  // Onboarding & Tenant Setup State (Phase B.2)
+  onboardingCompleted         Boolean  @default(false)
+  onboardingStep              String   @default("PROFILE") // "PROFILE" | "TEAM" | "OFFERINGS" | "PIPELINE" | "COMPLETED"
+  onboardingCompletedAt       DateTime?
+
+  // Industry Template Configuration (Phase B.3)
+  appliedTemplateKey          String?
+  appliedTemplateVersion      Int?
+  appliedTemplateAt           DateTime?
+
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  // Plan subscription
+  planId                  String?
+  plan                    Plan?                   @relation(fields: [planId], references: [id], onDelete: SetNull)
+
+  // Relations
+  users                   User[]
+  roles                   Role[]
+  teams                   Team[]
+  leads                   Lead[]
+  leadSources             LeadSource[]
+  leadStatuses            LeadStatus[]
+  sessions                Session[]
+  invitations             Invitation[]
+  activities              Activity[]
+  notes                   Note[]
+  tasks                   Task[]
+  auditLogs               AuditLog[]
+  leadStatusHistories     LeadStatusHistory[]
+  leadAssignmentHistories LeadAssignmentHistory[]
+  customFields            CustomField[]
+  customFieldValues       CustomFieldValue[]
+  leadImports             LeadImport[]
+  customers               Customer[]
+  customerPhones          CustomerPhone[]
+  customerEmails          CustomerEmail[]
+  offerings               Offering[]
+  dispositions            Disposition[]
+  leadDispositionHistories LeadDispositionHistory[]
+  taskRescheduleHistories TaskRescheduleHistory[]
+
+  @@index([planId])
+  @@map("companies")
+}
+
+// =============================================================================
+// ROLES
+// System roles seeded on company creation.
+// Custom roles are supported — do NOT hardcode role-name checks in business logic.
+// All permission checks go through centralized authorize() using Permission records.
+// =============================================================================
+
+model Role {
+  id          String   @id @default(cuid())
+  companyId   String
+  name        String
+  description String?  @db.Text
+  isSystem    Boolean  @default(false) // System roles cannot be deleted
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  company     Company      @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  permissions Permission[]
+  users       User[]
+
+  @@unique([companyId, name])
+  @@index([companyId])
+  @@map("roles")
+}
+
+// =============================================================================
+// PERMISSIONS
+// Stored per role. Format: module + action + dataScope.
+// Centralized authorize() reads these. No scattered role-name checks.
+// PRD §23: module.resource.action format simplified to module.action here.
+// =============================================================================
+
+model Permission {
+  id        String    @id @default(cuid())
+  roleId    String
+  module    String    // e.g. "leads", "users", "teams", "reports", "settings", "audit_logs"
+  action    String    // e.g. "view", "create", "update", "delete", "assign", "manage"
+  dataScope DataScope @default(COMPANY)
+  createdAt DateTime  @default(now())
+
+  role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, module, action])
+  @@index([roleId])
+  @@map("permissions")
+}
+
+// =============================================================================
+// USERS
+// Company-scoped. Soft-deleted via deletedAt.
+// hashedPassword is null for INVITED users before they set their password.
+// =============================================================================
+
+model User {
+  id             String     @id @default(cuid())
+  companyId      String
+  roleId         String
+  email          String
+  hashedPassword String?    // null until INVITED user activates
+  name           String
+  phone          String?
+  status         UserStatus @default(INVITED)
+  lastLoginAt    DateTime?
+  deletedAt      DateTime?  // Soft delete
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  company             Company               @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  role                Role                  @relation(fields: [roleId], references: [id])
+  teamMembers         TeamMember[]
+  managedTeams        Team[]                @relation("TeamManager")
+  sessions            Session[]
+  createdInvitations  Invitation[]          @relation("InvitedBy")
+  passwordResetTokens PasswordResetToken[]
+  assignedLeads       Lead[]                @relation("AssignedLeads")
+  activities          Activity[]
+  notes               Note[]
+  assignedTasks       Task[]                @relation("AssignedTasks")
+  createdTasks        Task[]                @relation("CreatedTasks")
+  completedTasks      Task[]                @relation("CompletedTasks")
+  auditLogs           AuditLog[]
+  leadStatusChanges   LeadStatusHistory[]
+  leadAssignments     LeadAssignmentHistory[] @relation("AssignedBy")
+  fromAssignments     LeadAssignmentHistory[] @relation("FromUser")
+  toAssignments       LeadAssignmentHistory[] @relation("ToUser")
+  createdImports      LeadImport[]            @relation("CreatedImports")
+  priceOverriddenLeads Lead[]                 @relation("LeadPriceOverrides")
+  leadDispositionsUpdated Lead[]                 @relation("LeadDispositionUpdatedBy")
+  leadDispositionsChanged LeadDispositionHistory[] @relation("LeadDispositionChangedBy")
+  taskHistoriesPerformed  TaskRescheduleHistory[] @relation("TaskHistoryPerformedBy")
+
+  // Uniqueness: email must be unique within a company (not globally)
+  @@unique([companyId, email])
+  @@index([companyId])
+  @@index([companyId, status])
+  @@index([companyId, roleId])
+  @@map("users")
+}
+
+// =============================================================================
+// TEAMS
+// =============================================================================
+
+model Team {
+  id          String   @id @default(cuid())
+  companyId   String
+  name        String
+  description String?  @db.Text
+  managerId   String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  company Company      @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  manager User?        @relation("TeamManager", fields: [managerId], references: [id])
+  members TeamMember[]
+  leads   Lead[]
+  tasks   Task[]
+
+  @@unique([companyId, name])
+  @@index([companyId])
+  @@index([companyId, isActive])
+  @@map("teams")
+}
+
+model TeamMember {
+  id        String   @id @default(cuid())
+  companyId String
+  teamId    String
+  userId    String
+  createdAt DateTime @default(now())
+
+  team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([teamId, userId])
+  @@index([companyId])
+  @@index([teamId])
+  @@index([userId])
+  @@map("team_members")
+}
+
+// =============================================================================
+// SESSIONS
+// DB-backed sessions per ADR-002.
+// tokenHash = SHA-256(rawToken). Raw token stored in HTTP-only cookie.
+// =============================================================================
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  companyId String
+  tokenHash String   @unique // SHA-256 of the cookie token — never store raw
+  expiresAt DateTime
+  userAgent String?
+  ipAddress String?
+  createdAt DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([companyId])
+  @@index([expiresAt])
+  @@map("sessions")
+}
+
+// =============================================================================
+// INVITATIONS
+// =============================================================================
+
+model Invitation {
+  id          String    @id @default(cuid())
+  companyId   String
+  email       String
+  roleId      String?
+  teamId      String?
+  tokenHash   String    @unique
+  invitedById String?
+  expiresAt   DateTime
+  usedAt      DateTime? // null = not yet used; set on activation
+  createdAt   DateTime  @default(now())
+
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  invitedBy User?   @relation("InvitedBy", fields: [invitedById], references: [id])
+
+  @@index([companyId])
+  @@index([email])
+  @@map("invitations")
+}
+
+// =============================================================================
+// PASSWORD RESET TOKENS
+// =============================================================================
+
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  userId    String
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime? // null = not yet used
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("password_reset_tokens")
+}
+
+// =============================================================================
+// CUSTOMER IDENTITY LAYER
+// Customer is the long-term identity/relationship with the company.
+// One Customer -> Many Enquiries (Leads).
+// =============================================================================
+
+model Customer {
+  id          String          @id @default(cuid())
+  companyId   String
+  name        String
+  displayName String?
+  companyName String?         // Organization / employer if B2B
+  notes       String?         @db.Text
+  deletedAt   DateTime?       // Soft delete
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  company     Company         @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  phones      CustomerPhone[]
+  emails      CustomerEmail[]
+  enquiries   Lead[]          // Relates to existing Lead table (operating as Enquiries)
+
+  @@index([companyId])
+  @@index([companyId, name])
+  @@index([companyId, deletedAt])
+  @@map("customers")
+}
+
+model CustomerPhone {
+  id              String   @id @default(cuid())
+  companyId       String
+  customerId      String
+  rawPhone        String
+  normalizedPhone String   // E.164 format: e.g. "+919876543210"
+  countryCode     String?  // ISO: e.g. "IN", "US"
+  type            String   @default("MOBILE") // MOBILE, WORK, HOME, WHATSAPP
+  isPrimary       Boolean  @default(false)
+  isVerified      Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  company  Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  // Enforces unique normalized phone within the tenant organization
+  @@unique([companyId, normalizedPhone])
+  @@index([companyId, customerId])
+  @@index([companyId, normalizedPhone])
+  @@map("customer_phones")
+}
+
+model CustomerEmail {
+  id         String   @id @default(cuid())
+  companyId  String
+  customerId String
+  email      String
+  type       String   @default("WORK") // WORK, PERSONAL
+  isPrimary  Boolean  @default(false)
+  isVerified Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  company  Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  // Enforces unique email within the tenant organization
+  @@unique([companyId, email])
+  @@index([companyId, customerId])
+  @@map("customer_emails")
+}
+
+// =============================================================================
+// OFFERINGS (PRODUCTS & SERVICES)
+// Generic catalog of offerings configured by company Admin.
+// =============================================================================
+
+model Offering {
+  id                      String       @id @default(cuid())
+  companyId               String
+  name                    String
+  type                    OfferingType @default(PRODUCT)
+  code                    String?
+  description             String?      @db.Text
+  defaultPrice            Decimal      @default(0) @db.Decimal(15, 2)
+  currency                String       @default("USD")
+  isActive                Boolean      @default(true)
+  allowSalesPriceOverride Boolean      @default(true)
+  createdAt               DateTime     @default(now())
+  updatedAt               DateTime     @updatedAt
+  deletedAt               DateTime?
+
+  company                 Company      @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  leads                   Lead[]
+
+  @@index([companyId])
+  @@index([companyId, isActive])
+  @@index([companyId, type])
+  @@map("offerings")
+}
+
+// =============================================================================
+// LEAD SOURCES
+// Company-configurable. e.g. Website, Google Ads, Referral, Walk-in
+// Cannot be deleted if leads reference it.
+// =============================================================================
+
+model LeadSource {
+  id        String   @id @default(cuid())
+  companyId String
+  name      String
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  leads   Lead[]
+
+  @@unique([companyId, name])
+  @@index([companyId])
+  @@map("lead_sources")
+}
+
+// =============================================================================
+// LEAD STATUSES
+// Company-configurable. e.g. New, Contacted, Interested, Converted, Lost
+// isDefault: the status assigned to new leads if none specified.
+// Cannot be deleted if leads reference it.
+// =============================================================================
+
+model LeadStatus {
+  id           String   @id @default(cuid())
+  companyId    String
+  name         String
+  color        String   @default("#6366f1")
+  isDefault    Boolean  @default(false)
+  displayOrder Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  company             Company             @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  leads               Lead[]
+  fromStatusHistories LeadStatusHistory[] @relation("FromStatus")
+  toStatusHistories   LeadStatusHistory[] @relation("ToStatus")
+
+  @@unique([companyId, name])
+  @@index([companyId])
+  @@map("lead_statuses")
+}
+
+// =============================================================================
+// LEADS — PRIMARY CRM ENTITY
+// Soft-deleted via deletedAt. All normal queries filter WHERE deletedAt IS NULL.
+// email/phone are at lead-level (not globally unique — same person can be in multiple companies).
+// =============================================================================
+
+model Lead {
+  id             String       @id @default(cuid())
+  companyId      String
+  name           String
+  email          String?
+  phone          String?
+  company        String?      // Lead's company/organization (not our Company model)
+  sourceId       String?
+  statusId       String?
+  assignedUserId String?
+  teamId         String?
+  priority       LeadPriority @default(MEDIUM)
+  amount         Decimal?     @db.Decimal(15, 2)
+  customerId     String?
+  offeringId             String?
+  defaultPriceAtCreation Decimal?     @db.Decimal(15, 2)
+  quotedPrice            Decimal?     @db.Decimal(15, 2)
+  priceOverridden        Boolean      @default(false)
+  priceOverrideReason    String?
+  priceUpdatedById       String?
+  priceUpdatedAt         DateTime?
+  dispositionId          String?
+  dispositionUpdatedAt   DateTime?
+  dispositionUpdatedById String?
+  deletedAt      DateTime?    // Soft delete — excluded from all normal queries
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  companyRef          Company               @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  customer            Customer?             @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  offering            Offering?             @relation(fields: [offeringId], references: [id], onDelete: SetNull)
+  source              LeadSource?           @relation(fields: [sourceId], references: [id])
+  status              LeadStatus?           @relation(fields: [statusId], references: [id])
+  assignedUser        User?                 @relation("AssignedLeads", fields: [assignedUserId], references: [id])
+  priceUpdatedBy      User?                 @relation("LeadPriceOverrides", fields: [priceUpdatedById], references: [id], onDelete: SetNull)
+  disposition         Disposition?          @relation(fields: [dispositionId], references: [id], onDelete: SetNull)
+  dispositionUpdatedBy User?                @relation("LeadDispositionUpdatedBy", fields: [dispositionUpdatedById], references: [id], onDelete: SetNull)
+  team                Team?                 @relation(fields: [teamId], references: [id])
+  activities          Activity[]
+  notes               Note[]
+  tasks               Task[]
+  statusHistories     LeadStatusHistory[]
+  assignmentHistories LeadAssignmentHistory[]
+  dispositionHistories LeadDispositionHistory[]
+  taskRescheduleHistories TaskRescheduleHistory[]
+  customFieldValues   CustomFieldValue[]
+
+  // Composite indexes for all common filter patterns (PRD §56)
+  @@index([companyId])
+  @@index([companyId, customerId])
+  @@index([companyId, offeringId])
+  @@index([companyId, dispositionId])
+  @@index([companyId, statusId])
+  @@index([companyId, sourceId])
+  @@index([companyId, assignedUserId])
+  @@index([companyId, teamId])
+  @@index([companyId, priority])
+  @@index([companyId, createdAt(sort: Desc)])
+  @@index([companyId, deletedAt])
+  @@map("leads")
+}
+
+// =============================================================================
+// LEAD STATUS HISTORY
+// Records every status transition.
+// =============================================================================
+
+model LeadStatusHistory {
+  id           String   @id @default(cuid())
+  leadId       String
+  companyId    String
+  fromStatusId String?  // null = initial status assignment
+  toStatusId   String?
+  changedById  String?
+  changedAt    DateTime @default(now())
+
+  lead       Lead        @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  company    Company     @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  changedBy  User?       @relation(fields: [changedById], references: [id])
+  fromStatus LeadStatus? @relation("FromStatus", fields: [fromStatusId], references: [id])
+  toStatus   LeadStatus? @relation("ToStatus", fields: [toStatusId], references: [id])
+
+  @@index([leadId])
+  @@index([companyId])
+  @@map("lead_status_histories")
+}
+
+// =============================================================================
+// LEAD ASSIGNMENT HISTORY
+// Records every assignment change.
+// =============================================================================
+
+model LeadAssignmentHistory {
+  id           String   @id @default(cuid())
+  leadId       String
+  companyId    String
+  fromUserId   String?  // null = initial assignment
+  toUserId     String?
+  assignedById String?
+  assignedAt   DateTime @default(now())
+
+  lead       Lead    @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  company    Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  fromUser   User?   @relation("FromUser", fields: [fromUserId], references: [id])
+  toUser     User?   @relation("ToUser", fields: [toUserId], references: [id])
+  assignedBy User?   @relation("AssignedBy", fields: [assignedById], references: [id])
+
+  @@index([leadId])
+  @@index([companyId])
+  @@map("lead_assignment_histories")
+}
+
+// =============================================================================
+// ACTIVITIES
+// Auto-recorded on significant actions. Drives the timeline on lead detail.
+// metadata: JSON for flexible context (e.g. old/new status names).
+// =============================================================================
+
+model Activity {
+  id          String       @id @default(cuid())
+  companyId   String
+  leadId      String?
+  userId      String?
+  type        ActivityType
+  description String
+  metadata    Json?
+  createdAt   DateTime     @default(now())
+
+  company Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  lead    Lead?    @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  user    User?    @relation(fields: [userId], references: [id])
+
+  @@index([companyId])
+  @@index([leadId])
+  @@index([companyId, createdAt(sort: Desc)])
+  @@map("activities")
+}
+
+// =============================================================================
+// NOTES
+// =============================================================================
+
+model Note {
+  id        String   @id @default(cuid())
+  companyId String
+  leadId    String
+  userId    String?
+  content   String   @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  lead    Lead    @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  user    User?   @relation(fields: [userId], references: [id])
+
+  @@index([leadId])
+  @@index([companyId])
+  @@map("notes")
+}
+
+// =============================================================================
+// TASKS / FOLLOW-UPS
+// PRD §42: dueAt stored in UTC. Display in company timezone.
+// Overdue = dueAt < NOW() AND status = PENDING.
+// =============================================================================
+
+model Task {
+  id             String       @id @default(cuid())
+  companyId      String
+  leadId         String?
+  assignedUserId String?
+  createdById    String?
+  completedById  String?
+  teamId         String?
+  type           TaskType     @default(FOLLOW_UP)
+  title          String
+  description    String?      @db.Text
+  dueAt          DateTime?    // UTC. Display in company timezone.
+  priority       TaskPriority @default(MEDIUM)
+  status         TaskStatus   @default(PENDING)
+  completedAt    DateTime?
+  cancelledAt    DateTime?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  company              Company                  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  lead                 Lead?                    @relation(fields: [leadId], references: [id], onDelete: SetNull)
+  assignedUser         User?                    @relation("AssignedTasks", fields: [assignedUserId], references: [id])
+  creator              User?                    @relation("CreatedTasks", fields: [createdById], references: [id])
+  completedBy          User?                    @relation("CompletedTasks", fields: [completedById], references: [id])
+  team                 Team?                    @relation(fields: [teamId], references: [id])
+  rescheduleHistories  TaskRescheduleHistory[]
+  dispositionHistories LeadDispositionHistory[]
+
+  @@index([companyId])
+  @@index([companyId, assignedUserId])
+  @@index([companyId, status])
+  @@index([companyId, type, status])
+  @@index([companyId, dueAt])
+  @@index([companyId, leadId, createdAt(sort: Desc)])
+  @@index([companyId, assignedUserId, dueAt])
+  @@index([leadId])
+  @@index([teamId])
+  @@map("tasks")
+}
+
+// =============================================================================
+// HIERARCHICAL DISPOSITIONS
+// Tenant-scoped arbitrary depth tree for enquiry outcome categorization.
+// Configurable rules control follow-up requirements, close gates, and conversion.
+// =============================================================================
+
+model Disposition {
+  id                   String    @id @default(cuid())
+  companyId            String
+  parentId             String?
+  name                 String
+  code                 String?
+  description          String?   @db.Text
+  color                String?   @default("#64748b")
+  sortOrder            Int       @default(0)
+  depth                Int       @default(0)
+  path                 String?   // Materialized path "/rootId/childId" for cycle prevention and subtree querying
+  isActive             Boolean   @default(true)
+  isTerminal           Boolean   @default(false)
+  requiresFollowUp     Boolean   @default(false)
+  followUpMandatory    Boolean   @default(false)
+  allowsClose          Boolean   @default(true)
+  allowsConvert        Boolean   @default(false)
+  cancelActiveFollowUp Boolean   @default(false) // Generic rule: cancels active follow-ups for this enquiry
+  deletedAt            DateTime? // Soft delete preserves historical references
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  company             Company                  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  parent              Disposition?             @relation("DispositionHierarchy", fields: [parentId], references: [id], onDelete: Restrict)
+  children            Disposition[]            @relation("DispositionHierarchy")
+  leads               Lead[]
+  fromHistories       LeadDispositionHistory[] @relation("FromDisposition")
+  toHistories         LeadDispositionHistory[] @relation("ToDisposition")
+  rescheduleHistories TaskRescheduleHistory[]
+
+  @@unique([companyId, parentId, name])
+  @@index([companyId])
+  @@index([companyId, parentId])
+  @@index([companyId, isActive])
+  @@index([companyId, deletedAt])
+  @@map("dispositions")
+}
+
+// =============================================================================
+// LEAD DISPOSITION HISTORY
+// Immutable record of every disposition change per enquiry.
+// =============================================================================
+
+model LeadDispositionHistory {
+  id                String       @id @default(cuid())
+  companyId         String
+  leadId            String
+  fromDispositionId String?
+  toDispositionId   String
+  changedById       String?
+  reason            String?      @db.Text
+  notes             String?      @db.Text
+  followUpTaskId    String?
+  createdAt         DateTime     @default(now())
+
+  company         Company      @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  lead            Lead         @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  fromDisposition Disposition? @relation("FromDisposition", fields: [fromDispositionId], references: [id], onDelete: SetNull)
+  toDisposition   Disposition  @relation("ToDisposition", fields: [toDispositionId], references: [id], onDelete: Restrict)
+  changedBy       User?        @relation("LeadDispositionChangedBy", fields: [changedById], references: [id], onDelete: SetNull)
+  followUpTask    Task?        @relation(fields: [followUpTaskId], references: [id], onDelete: SetNull)
+
+  @@index([companyId, leadId])
+  @@index([leadId, createdAt(sort: Desc)])
+  @@map("lead_disposition_histories")
+}
+
+// =============================================================================
+// TASK RESCHEDULE HISTORY
+// Immutable audit trail for task lifecycle events (reschedules, completions, etc.).
+// =============================================================================
+
+model TaskRescheduleHistory {
+  id            String                 @id @default(cuid())
+  companyId     String
+  taskId        String
+  leadId        String?
+  eventType     TaskLifecycleEventType
+  previousDueAt DateTime?
+  newDueAt      DateTime?
+  dispositionId String?
+  reason        String?                @db.Text
+  outcome       String?                @db.Text
+  performedById String?
+  createdAt     DateTime               @default(now())
+
+  company       Company      @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  task          Task         @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  lead          Lead?        @relation(fields: [leadId], references: [id], onDelete: SetNull)
+  disposition   Disposition? @relation(fields: [dispositionId], references: [id], onDelete: SetNull)
+  performedBy   User?        @relation("TaskHistoryPerformedBy", fields: [performedById], references: [id], onDelete: SetNull)
+
+  @@index([companyId, taskId])
+  @@index([companyId, leadId])
+  @@map("task_reschedule_histories")
+}
+
+// =============================================================================
+// AUDIT LOGS
+// companyId = null means it's a platform-level event (super admin action).
+// userId = null means it's a system action.
+// PRD §52: Record actor, company, action, entity, timestamp, requestId.
+// =============================================================================
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  companyId  String?  // null = platform-level
+  userId     String?  // null = system action
+  action     String
+  entityType String?
+  entityId   String?
+  metadata   Json?    // Relevant change summary
+  requestId  String?
+  ipAddress  String?
+  createdAt  DateTime @default(now())
+
+  company Company? @relation(fields: [companyId], references: [id])
+  user    User?    @relation(fields: [userId], references: [id])
+
+  @@index([companyId, createdAt(sort: Desc)])
+  @@index([companyId, entityType])
+  @@index([userId])
+  @@index([createdAt(sort: Desc)]) // For platform-level audit queries
+  @@map("audit_logs")
+}
+
+// =============================================================================
+// CUSTOM FIELDS & VALUES
+// =============================================================================
+
+enum CustomFieldType {
+  TEXT
+  TEXTAREA
+  NUMBER
+  DATE
+  DATETIME
+  BOOLEAN
+  SELECT
+  MULTI_SELECT
+  URL
+  EMAIL
+  PHONE
+}
+
+model CustomField {
+  id          String          @id @default(cuid())
+  companyId   String
+  entityType  String          @default("LEAD")
+  key         String          // Unique snake_case identifier within (companyId, entityType)
+  label       String
+  description String?
+  fieldType   CustomFieldType
+  required    Boolean         @default(false)
+  active      Boolean         @default(true)
+  sortOrder   Int             @default(0)
+  options     Json?           // For SELECT and MULTI_SELECT: ["Option 1", "Option 2"]
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  deletedAt   DateTime?
+
+  company Company            @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  values  CustomFieldValue[]
+
+  @@unique([companyId, entityType, key])
+  @@index([companyId, entityType, active, sortOrder])
+  @@index([companyId, entityType, key])
+  @@map("custom_fields")
+}
+
+model CustomFieldValue {
+  id            String   @id @default(cuid())
+  companyId     String
+  customFieldId String
+  entityType    String   @default("LEAD")
+  entityId      String
+  value         Json?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  company     Company     @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  customField CustomField @relation(fields: [customFieldId], references: [id], onDelete: Cascade)
+  lead        Lead?       @relation(fields: [entityId], references: [id], onDelete: Cascade)
+
+  @@unique([companyId, customFieldId, entityId])
+  @@index([companyId, entityId])
+  @@index([companyId, customFieldId, entityId])
+  @@index([companyId, entityType, entityId])
+  @@map("custom_field_values")
+}
+
+// =============================================================================
+// LEAD IMPORTS
+// =============================================================================
+
+enum LeadImportStatus {
+  PROCESSING
+  COMPLETED
+  COMPLETED_WITH_ERRORS
+  FAILED
+}
+
+model LeadImport {
+  id             String           @id @default(cuid())
+  companyId      String
+  createdById    String?
+  filename       String
+  totalRows      Int              @default(0)
+  successfulRows Int              @default(0)
+  skippedRows    Int              @default(0)
+  updatedRows    Int              @default(0)
+  failedRows     Int              @default(0)
+  status         LeadImportStatus @default(PROCESSING)
+  errorSummary   Json?
+  startedAt      DateTime         @default(now())
+  completedAt    DateTime?
+  createdAt      DateTime         @default(now())
+
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  createdBy User?   @relation("CreatedImports", fields: [createdById], references: [id])
+
+  @@index([companyId, createdAt(sort: Desc)])
+  @@index([companyId, status])
+  @@map("lead_imports")
+}
+
+// =============================================================================
+// SUPER ADMIN SESSIONS
+// Completely separate from tenant User sessions.
+// =============================================================================
+
+model SuperAdminSession {
+  id           String     @id @default(cuid())
+  superAdminId String
+  tokenHash    String     @unique // SHA-256 of raw 32-byte token
+  expiresAt    DateTime
+  userAgent    String?
+  ipAddress    String?
+  createdAt    DateTime   @default(now())
+
+  superAdmin   SuperAdmin @relation(fields: [superAdminId], references: [id], onDelete: Cascade)
+
+  @@index([superAdminId])
+  @@index([expiresAt])
+  @@map("super_admin_sessions")
+}
+
+// =============================================================================
+// PLANS & SUBSCRIPTION TIERS (CONFIGURATION ONLY — NO STRIPE)
+// =============================================================================
+
+enum PlanTier {
+  FREE
+  STARTER
+  PROFESSIONAL
+  ENTERPRISE
+}
+
+model Plan {
+  id          String    @id @default(cuid())
+  name        String
+  code        PlanTier  @unique
+  description String?
+  maxUsers    Int       @default(5)
+  maxLeads    Int       @default(500)
+  features    Json?     // e.g. { "customFields": true, "export": true, "analytics": true, "auditLogs": true }
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  companies   Company[]
+
+  @@map("plans")
+}
+
+// =============================================================================
+// PLATFORM AUDIT LOG
+// Append-only audit trail of platform operations across tenants.
+// Completely isolated from tenant AuditLog.
+// =============================================================================
+
+model PlatformAuditLog {
+  id           String      @id @default(cuid())
+  superAdminId String?
+  action       String      // e.g. SUPER_ADMIN_LOGIN, COMPANY_CREATED, COMPANY_SUSPENDED, etc.
+  entityType   String      // e.g. SUPER_ADMIN, COMPANY, PLAN, QUOTA
+  entityId     String?
+  metadata     Json?
+  beforeState  Json?
+  afterState   Json?
+  ipAddress    String?
+  userAgent    String?
+  createdAt    DateTime    @default(now())
+
+  superAdmin   SuperAdmin? @relation(fields: [superAdminId], references: [id], onDelete: SetNull)
+
+  @@index([superAdminId])
+  @@index([action])
+  @@index([entityType, entityId])
+  @@index([createdAt(sort: Desc)])
+  @@map("platform_audit_logs")
+}
+

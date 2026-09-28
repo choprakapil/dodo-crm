@@ -1,0 +1,20 @@
+{
+  "compilerOptions": {
+    "target": "ES2017",
+    "module": "commonjs",
+    "lib": ["ES2017"],
+    "allowJs": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "esModuleInterop": true,
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./*"]
+    },
+    "outDir": "./dist-seed"
+  },
+  "include": ["prisma/seed.ts", "tests/**/*.ts", "lib/**/*.ts", "scripts/**/*.ts"],
+  "exclude": ["node_modules"]
+}

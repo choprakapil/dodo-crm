@@ -1,0 +1,43 @@
+# Node / Next.js
+universal-crm/node_modules/
+universal-crm/.next/
+universal-crm/out/
+universal-crm/build/
+universal-crm/coverage/
+universal-crm/.pnp
+universal-crm/.pnp.*
+universal-crm/.yarn/*
+!universal-crm/.yarn/patches
+!universal-crm/.yarn/plugins
+!universal-crm/.yarn/releases
+!universal-crm/.yarn/versions
+
+# Env files — never commit secrets
+universal-crm/.env
+universal-crm/.env.local
+universal-crm/.env.development.local
+universal-crm/.env.test.local
+universal-crm/.env.production.local
+
+# Debug logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# TypeScript build info
+universal-crm/*.tsbuildinfo
+universal-crm/next-env.d.ts
+
+# Vercel
+universal-crm/.vercel
+
+# macOS
+.DS_Store
+**/.DS_Store
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
