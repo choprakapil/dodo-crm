@@ -784,6 +784,82 @@ export async function runPhase7DispositionFollowUpTests() {
     );
     console.log("  ✓ RBAC permissions verified across all disposition and outcome operations");
 
+    // ------------------------------------------------------------------------
+    // TEST 14: Task Reopening (REOPENED Lifecycle Event) & Invariant Enforcement
+    // ------------------------------------------------------------------------
+    console.log("  Testing Task Reopening (REOPENED event) & conflict behavior...");
+
+    // 1. Create a follow-up on reopenLead
+    const reopenLead = await prisma.lead.create({
+      data: {
+        companyId: companyA.id,
+        name: `Reopen Test Lead ${uniqueSuffix}`,
+        statusId: statusOpen.id,
+      },
+    });
+
+    const followUpToReopen = await FollowUpService.createFollowUp(ctxAdminA, {
+      leadId: reopenLead.id,
+      title: "Initial follow-up to complete and reopen",
+      dueAt: new Date(Date.now() + 3600 * 1000),
+      priority: "HIGH",
+    });
+
+    // Complete the task
+    await FollowUpService.completeFollowUp(ctxAdminA, followUpToReopen.id);
+    const completedTask = await FollowUpService.getFollowUpById(ctxAdminA, followUpToReopen.id);
+    assert.equal(completedTask.status, TaskStatus.COMPLETED);
+
+    // Reopen task by setting status back to PENDING via updateFollowUp
+    const reopenedTask = await FollowUpService.updateFollowUp(ctxAdminA, followUpToReopen.id, {
+      status: TaskStatus.PENDING,
+    });
+    assert.equal(reopenedTask.status, TaskStatus.PENDING, "Task status must be reset to PENDING");
+    assert.equal(reopenedTask.completedAt, null, "completedAt must be cleared upon reopening");
+
+    // Assert that REOPENED lifecycle event was recorded
+    const reopenHistory = await prisma.taskRescheduleHistory.findFirst({
+      where: {
+        taskId: followUpToReopen.id,
+        eventType: TaskLifecycleEventType.REOPENED,
+      },
+      orderBy: { createdAt: "desc" },
+    });
+    assert.ok(reopenHistory, "TaskRescheduleHistory record with REOPENED event must exist");
+    assert.equal(reopenHistory?.eventType, TaskLifecycleEventType.REOPENED);
+
+    // 2. Conflict Behavior: Attempt to reopen when another active follow-up already exists on the same lead
+    // Complete the task again
+    await FollowUpService.completeFollowUp(ctxAdminA, followUpToReopen.id);
+
+    // Create a new active follow-up on the same lead
+    const secondActiveFollowUp = await FollowUpService.createFollowUp(ctxAdminA, {
+      leadId: reopenLead.id,
+      title: "Second active follow-up",
+      dueAt: new Date(Date.now() + 7200 * 1000),
+      priority: "MEDIUM",
+    });
+    assert.equal(secondActiveFollowUp.status, TaskStatus.PENDING);
+
+    // Attempting to reopen the first task back to PENDING while secondActiveFollowUp is PENDING
+    // must be rejected by PostgreSQL partial unique index
+    let conflictCaught = false;
+    try {
+      await FollowUpService.updateFollowUp(ctxAdminA, followUpToReopen.id, {
+        status: TaskStatus.PENDING,
+      });
+    } catch (err: any) {
+      conflictCaught = true;
+      assert.ok(
+        err.message.includes("tasks_single_active_followup_per_lead_idx") ||
+        err.code === "P2002" ||
+        err.message.includes("Unique constraint"),
+        "Must be rejected by PostgreSQL partial unique index tasks_single_active_followup_per_lead_idx"
+      );
+    }
+    assert.ok(conflictCaught, "Reopening a task when an active follow-up already exists must be rejected");
+    console.log("  ✓ Task Reopening produces REOPENED event and partial unique index rejects conflicting reopen");
+
     console.log("\n====================================================================");
     console.log("🎉 ALL PHASE 7 DISPOSITION & FOLLOW-UP LIFECYCLE TESTS PASSED!");
     console.log("====================================================================");

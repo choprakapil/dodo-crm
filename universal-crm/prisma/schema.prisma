@@ -141,7 +141,7 @@ model Company {
   website   String?
   logoUrl   String?
   timezone  String        @default("UTC")
-  currency  String        @default("USD")
+  currency  String
   dateFormat String       @default("YYYY-MM-DD")
   defaultCountryCode String @default("IN")
   allowSalesPriceOverride     Boolean  @default(true)
@@ -489,7 +489,7 @@ model Offering {
   code                    String?
   description             String?      @db.Text
   defaultPrice            Decimal      @default(0) @db.Decimal(15, 2)
-  currency                String       @default("USD")
+  currency                String
   isActive                Boolean      @default(true)
   allowSalesPriceOverride Boolean      @default(true)
   createdAt               DateTime     @default(now())

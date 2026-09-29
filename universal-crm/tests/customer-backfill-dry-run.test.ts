@@ -28,6 +28,7 @@ export async function runCustomerBackfillDryRunTests() {
       name: `Backfill Test Corp US ${uniqueSuffix}`,
       slug: `backfill-test-us-${uniqueSuffix}`,
       defaultCountryCode: "US",
+      currency: "USD",
     },
   });
 

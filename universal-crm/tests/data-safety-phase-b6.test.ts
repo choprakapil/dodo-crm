@@ -110,6 +110,7 @@ export async function runPhaseB6DataSafetyTests() {
       name: `Purge Target A ${testRunId}`,
       slug: `purge-target-a-${testRunId}`,
       status: CompanyStatus.ACTIVE,
+      currency: "USD",
     },
   });
   const roleA = await prisma.role.create({
@@ -149,6 +150,7 @@ export async function runPhaseB6DataSafetyTests() {
       name: `Retained Company B ${testRunId}`,
       slug: `retained-b-${testRunId}`,
       status: CompanyStatus.ACTIVE,
+      currency: "USD",
     },
   });
   const roleB = await prisma.role.create({
@@ -246,6 +248,7 @@ export async function runPhaseB6DataSafetyTests() {
       name: `Rollback Fixture ${testRunId}`,
       slug: `rollback-target-${testRunId}`,
       status: CompanyStatus.ACTIVE,
+      currency: "USD",
     },
   });
   const roleRollback = await prisma.role.create({
@@ -367,6 +370,7 @@ export async function runPhaseB6DataSafetyTests() {
       name: `Soft Delete Test ${testRunId}`,
       slug: `soft-del-${testRunId}`,
       status: CompanyStatus.ACTIVE,
+      currency: "USD",
     },
   });
   const roleC = await prisma.role.create({
@@ -477,7 +481,7 @@ export async function runPhaseB6DataSafetyTests() {
 
   // Invariant G: Resolution remains strictly tenant scoped
   const compD = await prisma.company.create({
-    data: { name: `Tenant D ${testRunId}`, slug: `tenant-d-${testRunId}`, status: CompanyStatus.ACTIVE },
+    data: { name: `Tenant D ${testRunId}`, slug: `tenant-d-${testRunId}`, status: CompanyStatus.ACTIVE, currency: "USD" },
   });
   const roleD = await prisma.role.create({ data: { name: "Admin D", companyId: compD.id, isSystem: true } });
   const userD = await prisma.user.create({

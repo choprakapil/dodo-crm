@@ -92,11 +92,21 @@ export async function runSuperAdminUnitTests() {
     slug: "Globex-Corp",
     initialAdminName: "Hank Scorpio",
     initialAdminEmail: "hank@globex.com",
+    currency: "USD",
   });
   assert.ok(normalizedSlugUpper.success, "Uppercase in slug should be normalized to lowercase");
   if (normalizedSlugUpper.success) {
     assert.equal(normalizedSlugUpper.data.slug, "globex-corp");
   }
+
+  // Currency Safety: Provisioning without explicit currency must fail
+  const missingCurrencyProvision = provisionCompanySchema.safeParse({
+    name: "Globex Corporation",
+    slug: "globex-no-curr",
+    initialAdminName: "Hank Scorpio",
+    initialAdminEmail: "hank@globex.com",
+  });
+  assert.equal(missingCurrencyProvision.success, false, "Company provisioning without explicit currency must be rejected");
 
   // 3. Plan Schemas
   console.log("  → [Plan Schemas] Plan quota updates and assignment validation...");

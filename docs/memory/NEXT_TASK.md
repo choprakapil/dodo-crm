@@ -3,11 +3,11 @@
 # Next Task
 
 ## CURRENT VERSION: Universal CRM V1.1
-STATUS: Slices 1–8 LOCKED | Phases 1–7 COMPLETE & VERIFIED
-CURRENT ACTIVITY: Phase 7 Disposition Management + Follow-Up Lifecycle Engine Complete | Ready for Phase 8
-V1.1 PHASES 1–7: COMPLETE & VERIFIED
-NEXT TASK: Phase 8 — Conversion Engine & Won/Lost Lead Pipeline Architecture (Subject to User Authorization)
-SOURCE OF TRUTH: docs/LEAD_INTELLIGENCE_AND_CRM_CUSTOMIZATION_ARCHITECTURE.md
+STATUS: Slices 1–8 LOCKED | Phases 1–7 COMPLETE | Phases B.0–B.7 COMPLETE | Phase B.7.5 COMPLETE | Phase B.7.6 COMPLETE / VERIFIED
+CURRENT ACTIVITY: Phase B.7.6 Remediation & Hardening Complete
+NEXT TASK: B.8 (Controlled dummy-data cleanup) — NEXT AUTHORIZED PHASE, pending explicit user authorization
+PHASE 8: BLOCKED / UNTOUCHED (Requires explicit user authorization)
+SOURCE OF TRUTH: docs/CRM_MASTER_SYSTEM_GUIDE.md
 
 ---
 
@@ -33,40 +33,26 @@ SOURCE OF TRUTH: docs/LEAD_INTELLIGENCE_AND_CRM_CUSTOMIZATION_ARCHITECTURE.md
 
 ## 2. Next Phase: Phase 8 — Conversion Engine & Won/Lost Lead Pipeline Architecture (Awaiting Authorization)
 
-Scope for Phase 7:
-- **Hierarchical Disposition System**:
-  - Two-level tree: Disposition Category (e.g. Interested, Follow-up, Not Interested, Lost) → Sub-disposition (e.g. Price Issue, Competitor, Needs Demo).
-  - Configurable disposition rules and mandatory remark enforcement.
-- **Complete Follow-Up Lifecycle (Reusing Existing Task System)**:
-  - Strict reuse of the existing `Task` model (`model Task`) — do NOT create a parallel follow-up architecture.
-  - Full state lifecycle: `PENDING → COMPLETED → RESCHEDULED → CANCELLED → OVERDUE`.
-  - **Cardinality Invariant**: An active enquiry has at most ONE active follow-up Task for the relevant follow-up workflow.
-  - **Reschedule Without Duplication**:
-    - When a customer requests another callback ("Call me tomorrow", disposition: `CALL_BACK_REQUESTED`): the existing active follow-up Task is updated with the new date/time and marked `RESCHEDULED` rather than creating redundant tasks.
-    - When a customer does not answer (`NO_ANSWER`): the agent schedules/reschedules the next follow-up. `NO_ANSWER` must NOT create unlimited orphan tasks.
-  - **Immutable Follow-Up History / Audit Trail**:
-    - Every reschedule, completion, or cancellation preserves an immutable log containing:
-      - Previous scheduled date/time
-      - New scheduled date/time
-      - Action/outcome
-      - Disposition linked
-      - Reason (where provided)
-      - User who performed the action
-      - Timestamp
-    - Historical follow-up events are never overwritten. Current Task represents the active state; history records every past state transition.
-  - **Overdue Management**: Follow-ups past `dueAt` become `OVERDUE` and allow authorized users to complete, reschedule, or cancel.
-  - **Disposition Coupling Rules**:
-    - If disposition means "Do Not Contact" / Closed Lost, any active follow-up associated with that enquiry is automatically cancelled server-side.
-    - If a disposition requires a follow-up, the enquiry cannot be completed or saved until the required follow-up is successfully scheduled.
-  - **Security & Authorization**: Every follow-up action strictly respects Tenant Isolation, RBAC (`tasks.create`, `tasks.update`), Data Scope (`OWN`, `TEAM`, `COMPANY`), and assignment rules.
-- **Conversion Engine**:
-  - Enquiry conversion workflow, customer status advancement, revenue logging, and conversion audit trail.
+Scope for Phase 8 (When Authorized):
+- **Lead Lifecycle State Architecture**:
+  - Formal conversion workflow from active Enquiry to Won Deal / Converted Customer.
+  - Lifecycle state machine: `ENQUIRY → WON / CONVERTED | LOST | REOPENED`.
+  - Terminal state validation: prevents modifications to converted enquiries unless formally reopened by authorized managers.
+- **Conversion Entity & Audit Trail**:
+  - `LeadConversion` model linking Enquiry (`Lead`), `Customer`, deal value, quoted offering, and performing user.
+  - Full conversion audit logging in `AuditLog` and Lead activity timeline.
+- **Follow-Up Invariant Synchronization**:
+  - When an enquiry converts or closes lost: any remaining active follow-up task is automatically cancelled server-side.
+- **Task Status Lifecycle Clarification**:
+  - `TaskStatus` enum values: `PENDING`, `OVERDUE`, `COMPLETED`, `CANCELLED`.
+  - Rescheduling does not change `TaskStatus` to `RESCHEDULED`; it resets the task status to `PENDING` with new `dueAt` and records an immutable `TaskLifecycleEventType.RESCHEDULED` in `task_reschedule_histories`.
+  - Reopening a completed or cancelled task transitions status back to `PENDING` and records `TaskLifecycleEventType.REOPENED` (subject to the partial unique index `tasks_single_active_followup_per_lead_idx`).
 - **Execution Gate**:
-  - Do NOT start Phase 7 until Phase 6 is reviewed and authorized by the user.
+  - Do NOT start Phase 8 or Phase B.8 without explicit user authorization.
 
 ---
 
 ## 3. Strict Rule Reminder
 
-STOP AFTER PHASE 6.
-Do NOT automatically start Phase 7 or any subsequent phase without explicit user instructions.
+STOP AFTER B.7.6 HARDENING.
+Do NOT automatically start Phase 8, Phase B.8, or any subsequent phase without explicit user instructions.

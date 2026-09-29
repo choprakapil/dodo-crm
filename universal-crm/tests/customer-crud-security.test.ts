@@ -35,6 +35,7 @@ export async function runCustomerCrudSecurityTests() {
       name: `Phase5 Tenant Alpha ${uniqueSuffix}`,
       slug: `p5-alpha-${uniqueSuffix}`,
       defaultCountryCode: "US",
+      currency: "USD",
     },
   });
 
@@ -44,6 +45,7 @@ export async function runCustomerCrudSecurityTests() {
       name: `Phase5 Tenant Beta ${uniqueSuffix}`,
       slug: `p5-beta-${uniqueSuffix}`,
       defaultCountryCode: "US",
+      currency: "USD",
     },
   });
 

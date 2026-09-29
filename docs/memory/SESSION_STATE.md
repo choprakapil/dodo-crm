@@ -2,13 +2,17 @@
 
 # Session State
 
-Date: 2026-09-18
-Current Version: Universal CRM V1.1 (Customer Identity, Offerings, Dispositions & Follow-Up Lifecycle)
-Status: Slices 1–8 LOCKED | Phases 1–7 COMPLETE & VERIFIED
-Current Activity: Phase 7 Disposition Management + Follow-Up Lifecycle Engine Complete | Ready for Phase 8
+Date: 2026-09-29
+Current Version: Universal CRM V1.1
+Status: Slices 1–8 LOCKED | Phases 1–7 COMPLETE | Phases B.0–B.7 COMPLETE | Phase B.7.5 COMPLETE | Phase B.7.6 COMPLETE / VERIFIED
+Current Activity: Phase B.7.6 Remediation & Hardening Complete
 V1.1 Phases 1–7: COMPLETE & VERIFIED
-Next Activity: Phase 8 — Conversion Engine & Won/Lost Lead Pipeline Architecture (Subject to User Authorization)
-Source of Truth: docs/LEAD_INTELLIGENCE_AND_CRM_CUSTOMIZATION_ARCHITECTURE.md
+Phases B.0–B.7: COMPLETE, HARDENED & VERIFIED
+Phase B.7.5: COMPLETE & VERIFIED (docs/CRM_MASTER_SYSTEM_GUIDE.md)
+Phase B.7.6: COMPLETE / VERIFIED (Company.currency & Offering.currency @default("USD") dropped via migrations, package.json db:reset hardened, phase-lock wired into npm test/build/deploy:prepare, REOPENED lifecycle documented & tested, exactly 4 system templates verified)
+B.8: NEXT AUTHORIZED PHASE, pending explicit user authorization
+Phase 8: BLOCKED / UNTOUCHED (Requires explicit user authorization)
+Source of Truth: docs/CRM_MASTER_SYSTEM_GUIDE.md
 
 ---
 
@@ -59,16 +63,16 @@ Source of Truth: docs/LEAD_INTELLIGENCE_AND_CRM_CUSTOMIZATION_ARCHITECTURE.md
    - REST endpoints: `POST /api/v1/leads/[id]/call-outcome`, `GET /api/v1/leads/[id]/disposition-history`
    - UI: `CallOutcomeDialog` on `/app/leads/[id]`
 
-5. **Verification & Testing**:
-   - Dedicated test suite `tests/phase7-disposition-followup.test.ts` (14/14 test cases passing)
-   - Master test runner `npm test` (all 40 test suites passing across Slices 1–8 and Phases 1–7 in 17.00s)
-   - `npm run type-check`: 0 errors
-   - `npm run lint`: 0 errors
-   - `npm run build`: 0 errors (74/74 routes compiled)
+6. **Phase B.7.6 Hardening**:
+   - **Governance Hardening**: Established `.agents/skills` root directory symlinking all 58 repository skills to guarantee agent discovery.
+   - **Currency Hardening**: Removed `@default("USD")` from `Offering.currency` in Prisma schema; deployed migration `20260929080000_drop_offering_currency_default` with 0 `db push`; removed `.default("USD")` from platform provisioning validation schema.
+   - **Destructive Command Guard**: Hardened `npm run db:reset` in `package.json` to require explicit `ALLOW_DESTRUCTIVE_RESET=true` environment variable.
+   - **State-Document Reconciliation**: Reconciled `CRM_MASTER_SYSTEM_GUIDE.md` (Offering currency migration, task index dual enforcement, REOPENED event status, 6 onboarding states, customer merge status), `AGENT_HANDOFF.md`, and `NEXT_TASK.md`.
+   - **Phase-Lock Enforcement**: Programmatic phase-lock checker verifying Phase 8 models and features remain absent.
 
 ---
 
 ## Next Action
 
-STOP. Phase 7 is complete and verified.
-Do NOT start Phase 8 until explicitly authorized by the user.
+Awaiting user approval of Phase B.7.6 before proceeding to B.8 Controlled dummy-data cleanup.
+Do NOT start Phase 8 or mutate production data without explicit authorization.

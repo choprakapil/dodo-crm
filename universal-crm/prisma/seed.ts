@@ -130,6 +130,7 @@ async function seedCompany(data: {
   slug: string;
   email: string;
   timezone: string;
+  currency?: string;
   planId?: string;
 }) {
   const existing = await prisma.company.findUnique({ where: { slug: data.slug } });
@@ -150,6 +151,7 @@ async function seedCompany(data: {
       slug: data.slug,
       email: data.email,
       timezone: data.timezone,
+      currency: data.currency || "USD",
       status: CompanyStatus.ACTIVE,
       planId: data.planId,
       onboardingCompleted: true,

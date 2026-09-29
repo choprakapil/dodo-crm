@@ -99,6 +99,7 @@ async function runIntegrationTests() {
     data: {
       name: `Suspended Corp ${Date.now()}`,
       slug: `suspended-corp-${Date.now()}`,
+      currency: "USD",
       status: CompanyStatus.SUSPENDED,
     },
   });

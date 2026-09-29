@@ -4,21 +4,22 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "npm run check:phase-lock && next build",
     "start": "next start",
     "lint": "eslint",
     "type-check": "tsc --noEmit",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:deploy": "prisma migrate deploy",
-    "prisma:push": "prisma db push",
+    "prisma:push": "node -e 'if(process.argv.includes(\"--force-reset\")){console.error(\"❌ BLOCKED: force-reset is forbidden via prisma:push\");process.exit(1)}' && prisma db push",
     "seed": "ts-node --project tsconfig.seed.json prisma/seed.ts",
-    "test": "ts-node -r tsconfig-paths/register --project tsconfig.seed.json tests/run-all.ts",
+    "test": "npm run check:phase-lock && ts-node -r tsconfig-paths/register --project tsconfig.seed.json tests/run-all.ts",
     "test:e2e": "ts-node -r tsconfig-paths/register --project tsconfig.seed.json tests/http-e2e.test.ts",
     "customer-backfill": "ts-node -r tsconfig-paths/register --project tsconfig.seed.json scripts/customer-backfill.ts",
     "onboarding-backfill": "ts-node -r tsconfig-paths/register --project tsconfig.seed.json scripts/onboarding-backfill.ts",
-    "deploy:prepare": "prisma migrate deploy && npm run onboarding-backfill -- --apply",
-    "db:reset": "prisma migrate reset --force && npm run seed"
+    "deploy:prepare": "npm run check:phase-lock && prisma migrate deploy && npm run onboarding-backfill -- --apply",
+    "check:phase-lock": "ts-node -r tsconfig-paths/register --project tsconfig.seed.json scripts/check-phase-locks.ts",
+    "db:reset": "node scripts/guard-db-reset.js && prisma migrate reset --force && npm run seed"
   },
   "prisma": {
     "seed": "ts-node --project tsconfig.seed.json prisma/seed.ts"

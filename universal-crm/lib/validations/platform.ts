@@ -26,7 +26,7 @@ export const provisionCompanySchema = z
     initialAdminEmail: z.string().trim().email("Valid initial admin email is required").toLowerCase(),
     planTier: z.enum(PlanTiers).default("STARTER"),
     timezone: z.string().trim().default("UTC"),
-    currency: z.string().trim().length(3, "Currency must be 3-letter code").toUpperCase().default("USD"),
+    currency: z.string().trim().length(3, "Currency must be a 3-letter ISO code").toUpperCase(),
   })
   .strict();
 

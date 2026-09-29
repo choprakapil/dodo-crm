@@ -26,6 +26,7 @@ export async function runCustomerResolutionIntegrationTests() {
     data: {
       name: `Resolution Co A ${uniqueSuffix}`,
       slug: `res-co-a-${uniqueSuffix}`,
+      currency: "USD",
     },
   });
 
@@ -33,6 +34,7 @@ export async function runCustomerResolutionIntegrationTests() {
     data: {
       name: `Resolution Co B ${uniqueSuffix}`,
       slug: `res-co-b-${uniqueSuffix}`,
+      currency: "USD",
     },
   });
 

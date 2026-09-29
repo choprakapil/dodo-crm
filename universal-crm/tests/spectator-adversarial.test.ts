@@ -87,6 +87,7 @@ async function runSpectatorAdversarialTests() {
     data: {
       name: `Company X ${Date.now()}`,
       slug: `company-x-${Date.now()}`,
+      currency: "USD",
       status: CompanyStatus.ACTIVE,
     },
   });

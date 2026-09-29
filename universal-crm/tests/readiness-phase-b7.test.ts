@@ -114,7 +114,7 @@ export async function runPhaseB7ProductionReadinessTests() {
 
   // Create disposable company & user to test instant revocation
   const comp = await prisma.company.create({
-    data: { name: `Auth Hardening ${testRunId}`, slug: `auth-b7-${testRunId}`, status: CompanyStatus.ACTIVE },
+    data: { name: `Auth Hardening ${testRunId}`, slug: `auth-b7-${testRunId}`, status: CompanyStatus.ACTIVE, currency: "USD" },
   });
   const role = await prisma.role.create({
     data: { name: "Agent", companyId: comp.id, isSystem: false },

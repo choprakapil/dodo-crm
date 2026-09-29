@@ -21,6 +21,7 @@ export async function runCustomerIdentityUnitTests() {
     data: {
       name: `Phase 1 Tenant A ${uniqueSuffix}`,
       slug: `p1-tenant-a-${uniqueSuffix}`,
+      currency: "USD",
     },
   });
 
@@ -28,6 +29,7 @@ export async function runCustomerIdentityUnitTests() {
     data: {
       name: `Phase 1 Tenant B ${uniqueSuffix}`,
       slug: `p1-tenant-b-${uniqueSuffix}`,
+      currency: "USD",
     },
   });
 

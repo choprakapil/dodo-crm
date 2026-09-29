@@ -27,6 +27,7 @@ export async function runEnquiryLeadModelIntegrationTests() {
     data: {
       name: `Enquiry Co ${uniqueSuffix}`,
       slug: `enquiry-co-${uniqueSuffix}`,
+      currency: "USD",
     },
   });
 

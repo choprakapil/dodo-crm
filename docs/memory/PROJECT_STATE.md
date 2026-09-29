@@ -3,19 +3,18 @@
 # Project State
 
 CURRENT VERSION: Universal CRM V1.1 (Customer Identity, Offerings, Dispositions & Follow-Up Lifecycle)
-STATUS: Slices 1–8 LOCKED | Phases 1–7 COMPLETE & VERIFIED
-CURRENT ACTIVITY: Phase 7 Disposition Management + Follow-Up Lifecycle Engine Complete | Ready for Phase 8
+STATUS: Slices 1–8 LOCKED | Phases 1–7 COMPLETE | Phases B.0–B.7 COMPLETE | Phase B.7.5 COMPLETE | Phase B.7.6 COMPLETE / VERIFIED
+CURRENT ACTIVITY: Phase B.7.6 Remediation & Hardening Complete
 SUPER ADMIN REVIEW: COMPLETE
-V1.1 PHASES 1–3: COMPLETE & VERIFIED (Schema, Phone Normalization, Customer Resolution, Lead Compatibility)
-V1.1 PHASE 4A: COMPLETE & VERIFIED (Dry-run backfill script, 0 DB mutations, 37 test suites passing)
-V1.1 PHASE 4B: COMPLETE & VERIFIED (Historical backfill executed, conflict safety applied, 100 leads linked, 100 customers created, 16 unresolved preserved, 0 cross-tenant links)
-V1.1 PHASE 5: COMPLETE & VERIFIED (CustomerService, CRUD APIs, UI Workspaces, Contact Management, RBAC, Data Scope Enforced Enquiry History, Soft Delete, 38/38 test suites passing)
-V1.1 PHASE 6: COMPLETE & VERIFIED (Offering Catalog PRODUCT/SERVICE, Server-side Price Override Engine, Admin Customer Directory Visibility, Data-Scope-Filtered Customer History Preview, Atomic Enquiry Creation, 39/39 master test suites passing)
-V1.1 PHASE 7: COMPLETE & VERIFIED (Hierarchical Dispositions, Generic Rules, TaskType.FOLLOW_UP Scoping, Partial Unique Invariant Index, Reschedule Lifecycle Events, Atomic PostgreSQL UPDATE Overdue Sync, Call Outcome Workflow, Admin Workspace, 40/40 master test suites passing)
-NEXT DEVELOPMENT: Phase 8 — Conversion Engine & Won/Lost Lead Pipeline Architecture (Subject to User Authorization)
-SOURCE OF TRUTH: docs/LEAD_INTELLIGENCE_AND_CRM_CUSTOMIZATION_ARCHITECTURE.md
+V1.1 PHASES 1–7: COMPLETE & VERIFIED
+PHASES B.0–B.7: COMPLETE, HARDENED & VERIFIED (Data Safety, Production Readiness, Observability, Provider Fail-Closed)
+PHASE B.7.5: COMPLETE & VERIFIED (Comprehensive Read-Only Master Architecture & Product Guide)
+PHASE B.7.6: COMPLETE / VERIFIED (Company.currency & Offering.currency @default("USD") dropped via proper migrations, package.json db:reset hardened against production & remote targets, phase-lock wired into npm test/build/deploy:prepare, REOPENED lifecycle documented & tested, exactly 4 system templates verified)
+B.8: NEXT AUTHORIZED PHASE, pending explicit user authorization
+PHASE 8: BLOCKED / UNTOUCHED (Requires explicit user authorization)
+SOURCE OF TRUTH: docs/CRM_MASTER_SYSTEM_GUIDE.md
 PRD Version: 2.0 FINAL
-Date: 2026-09-18
+Date: 2026-09-29
 
 ---
 
