@@ -159,7 +159,14 @@ export async function runPhaseB7ProductionReadinessTests() {
   // ---------------------------------------------------------------------------
   console.log("  → [Test C] Authorization matrix & role boundary checks...");
   // Check SuperAdmin auth cannot authenticate via standard tenant session validator
-  const saSession = await createSuperAdminSession("cmu5ceb7m00dht5sn90lcd72n"); // platform master admin
+  const superAdmin = await prisma.superAdmin.findFirstOrThrow({
+    where: {
+      isActive: true,
+      deletedAt: null,
+    },
+  });
+
+  const saSession = await createSuperAdminSession(superAdmin.id);
   const crossAuth = await validateSessionToken(saSession.rawToken);
   assert.equal(crossAuth, null, "Super Admin session token must never validate as a tenant session");
 

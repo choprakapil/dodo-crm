@@ -32,7 +32,16 @@ export async function runFollowUpTenantSecurityTests() {
 
   // 3. Create a follow-up in Zenith Solutions
   const zenithLead = await prisma.lead.findFirst({
-    where: { companyId: zenithCtx.company.id, deletedAt: null },
+    where: {
+      companyId: zenithCtx.company.id,
+      deletedAt: null,
+      tasks: {
+        none: {
+          type: "FOLLOW_UP",
+          status: { in: ["PENDING", "OVERDUE"] },
+        },
+      },
+    },
   });
   assert.ok(zenithLead, "Zenith lead must exist");
 

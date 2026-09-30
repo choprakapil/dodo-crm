@@ -143,6 +143,36 @@ export async function runPhaseB6DataSafetyTests() {
       customerId: custA.id,
     },
   });
+  const noteA = await prisma.note.create({
+    data: {
+      companyId: compA.id,
+      leadId: leadA.id,
+      userId: userA.id,
+      content: "Test Note A",
+    },
+  });
+  const statusHistA = await prisma.leadStatusHistory.create({
+    data: {
+      companyId: compA.id,
+      leadId: leadA.id,
+      changedById: userA.id,
+    },
+  });
+  const assignHistA = await prisma.leadAssignmentHistory.create({
+    data: {
+      companyId: compA.id,
+      leadId: leadA.id,
+      toUserId: userA.id,
+      assignedById: userA.id,
+    },
+  });
+  const pwdTokenA = await prisma.passwordResetToken.create({
+    data: {
+      userId: userA.id,
+      tokenHash: `hash-a-${testRunId}`,
+      expiresAt: new Date(Date.now() + 3600000),
+    },
+  });
 
   // Setup Company B (must NOT be touched)
   const compB = await prisma.company.create({
@@ -183,6 +213,36 @@ export async function runPhaseB6DataSafetyTests() {
       customerId: custB.id,
     },
   });
+  const noteB = await prisma.note.create({
+    data: {
+      companyId: compB.id,
+      leadId: leadB.id,
+      userId: userB.id,
+      content: "Test Note B",
+    },
+  });
+  const statusHistB = await prisma.leadStatusHistory.create({
+    data: {
+      companyId: compB.id,
+      leadId: leadB.id,
+      changedById: userB.id,
+    },
+  });
+  const assignHistB = await prisma.leadAssignmentHistory.create({
+    data: {
+      companyId: compB.id,
+      leadId: leadB.id,
+      toUserId: userB.id,
+      assignedById: userB.id,
+    },
+  });
+  const pwdTokenB = await prisma.passwordResetToken.create({
+    data: {
+      userId: userB.id,
+      tokenHash: `hash-b-${testRunId}`,
+      expiresAt: new Date(Date.now() + 3600000),
+    },
+  });
 
   // Purge Company A
   const purgeResult = await PlatformCompanyService.purgeCompany(compA.id, validSuperAdminId, {
@@ -193,12 +253,20 @@ export async function runPhaseB6DataSafetyTests() {
   assert(purgeResult.databaseCounts.companies >= 1, "Must report 1 company deleted");
   assert(purgeResult.databaseCounts.leads >= 1, "Must report Lead A deleted");
   assert(purgeResult.databaseCounts.customers >= 1, "Must report Customer A deleted");
+  assert((purgeResult.databaseCounts.notes ?? 0) >= 1, "Must report Note A deleted");
+  assert((purgeResult.databaseCounts.leadStatusHistories ?? 0) >= 1, "Must report LeadStatusHistory A deleted");
+  assert((purgeResult.databaseCounts.leadAssignmentHistories ?? 0) >= 1, "Must report LeadAssignmentHistory A deleted");
+  assert((purgeResult.databaseCounts.passwordResetTokens ?? 0) >= 1, "Must report PasswordResetToken A deleted");
 
   // Verify Company A and children are gone
   const checkCompA = await prisma.company.findUnique({ where: { id: compA.id } });
   assert.equal(checkCompA, null, "Company A must be purged from database");
   const checkLeadA = await prisma.lead.findUnique({ where: { id: leadA.id } });
   assert.equal(checkLeadA, null, "Lead A must be purged from database");
+  assert.equal(await prisma.note.findUnique({ where: { id: noteA.id } }), null, "Note A must be purged");
+  assert.equal(await prisma.leadStatusHistory.findUnique({ where: { id: statusHistA.id } }), null, "LeadStatusHistory A must be purged");
+  assert.equal(await prisma.leadAssignmentHistory.findUnique({ where: { id: assignHistA.id } }), null, "LeadAssignmentHistory A must be purged");
+  assert.equal(await prisma.passwordResetToken.findUnique({ where: { id: pwdTokenA.id } }), null, "PasswordResetToken A must be purged");
 
   // Verify Company B and children remain 100% intact
   const checkCompB = await prisma.company.findUnique({ where: { id: compB.id } });
@@ -209,6 +277,10 @@ export async function runPhaseB6DataSafetyTests() {
   assert(checkCustB !== null, "Customer B must remain intact");
   const checkLeadB = await prisma.lead.findUnique({ where: { id: leadB.id } });
   assert(checkLeadB !== null, "Lead B must remain intact");
+  assert.notEqual(await prisma.note.findUnique({ where: { id: noteB.id } }), null, "Note B must remain intact");
+  assert.notEqual(await prisma.leadStatusHistory.findUnique({ where: { id: statusHistB.id } }), null, "LeadStatusHistory B must remain intact");
+  assert.notEqual(await prisma.leadAssignmentHistory.findUnique({ where: { id: assignHistB.id } }), null, "LeadAssignmentHistory B must remain intact");
+  assert.notEqual(await prisma.passwordResetToken.findUnique({ where: { id: pwdTokenB.id } }), null, "PasswordResetToken B must remain intact");
 
   passedTests++;
   console.log("  ✓ Test B: Tenant isolation during purge verified (Company B unaffected)");
@@ -282,6 +354,36 @@ export async function runPhaseB6DataSafetyTests() {
       dueAt: new Date(),
     },
   });
+  const noteRollback = await prisma.note.create({
+    data: {
+      companyId: compRollback.id,
+      leadId: leadRollback.id,
+      userId: userRollback.id,
+      content: "Rollback Note",
+    },
+  });
+  const statusHistRollback = await prisma.leadStatusHistory.create({
+    data: {
+      companyId: compRollback.id,
+      leadId: leadRollback.id,
+      changedById: userRollback.id,
+    },
+  });
+  const assignHistRollback = await prisma.leadAssignmentHistory.create({
+    data: {
+      companyId: compRollback.id,
+      leadId: leadRollback.id,
+      toUserId: userRollback.id,
+      assignedById: userRollback.id,
+    },
+  });
+  const pwdTokenRollback = await prisma.passwordResetToken.create({
+    data: {
+      userId: userRollback.id,
+      tokenHash: `hash-rollback-${testRunId}`,
+      expiresAt: new Date(Date.now() + 3600000),
+    },
+  });
 
   // Attempt purge with _testFailInsideTransaction: true (after steps 1-20 delete, fails before step 21)
   let trueRollbackCaught = false;
@@ -297,7 +399,7 @@ export async function runPhaseB6DataSafetyTests() {
   }
   assert(trueRollbackCaught, "Controlled transaction failure must throw during transaction");
 
-  // VERIFY TRUE ROLLBACK: All previously executed steps (tasks, leads, customers, users, roles) must be RESTORED
+  // VERIFY TRUE ROLLBACK: All previously executed steps (tasks, leads, customers, users, roles, notes, histories, tokens) must be RESTORED
   const verifyComp = await prisma.company.findUnique({ where: { id: compRollback.id } });
   assert(verifyComp !== null, "Company must still exist after rollback");
 
@@ -315,6 +417,18 @@ export async function runPhaseB6DataSafetyTests() {
 
   const verifyRole = await prisma.role.findUnique({ where: { id: roleRollback.id } });
   assert(verifyRole !== null, "Role must be restored after rollback");
+
+  const verifyNote = await prisma.note.findUnique({ where: { id: noteRollback.id } });
+  assert(verifyNote !== null, "Note must be restored after rollback");
+
+  const verifyStatusHist = await prisma.leadStatusHistory.findUnique({ where: { id: statusHistRollback.id } });
+  assert(verifyStatusHist !== null, "LeadStatusHistory must be restored after rollback");
+
+  const verifyAssignHist = await prisma.leadAssignmentHistory.findUnique({ where: { id: assignHistRollback.id } });
+  assert(verifyAssignHist !== null, "LeadAssignmentHistory must be restored after rollback");
+
+  const verifyPwdToken = await prisma.passwordResetToken.findUnique({ where: { id: pwdTokenRollback.id } });
+  assert(verifyPwdToken !== null, "PasswordResetToken must be restored after rollback");
 
   // Verify NO false audit event claiming success was recorded
   const falseAudit = await prisma.platformAuditLog.findFirst({
@@ -566,9 +680,9 @@ export async function runPhaseB6DataSafetyTests() {
   console.log("  ✓ Test K: Storage deletion failure tracking verified");
 
   // ---------------------------------------------------------------------------
-  // TEST L: Audit event creation
+  // TEST L: Audit event creation & platform/null-company audit preservation
   // ---------------------------------------------------------------------------
-  console.log("  → [Test L] Audit event creation on purge...");
+  console.log("  → [Test L] Audit event creation on purge and null-company audit preservation...");
   const purgeAudit = await prisma.platformAuditLog.findFirst({
     where: {
       action: "COMPANY_PURGED",
@@ -577,8 +691,19 @@ export async function runPhaseB6DataSafetyTests() {
   });
   assert(purgeAudit !== null, "PlatformAuditLog must contain COMPANY_PURGED entry for Company A");
   assert.equal(purgeAudit.entityType, "COMPANY");
+  const purgeMeta = purgeAudit.metadata as any;
+  assert(purgeMeta?.databaseCounts?.notes >= 1, "Audit metadata must record notes count");
+  assert(purgeMeta?.databaseCounts?.leadStatusHistories >= 1, "Audit metadata must record leadStatusHistories count");
+  assert(purgeMeta?.databaseCounts?.leadAssignmentHistories >= 1, "Audit metadata must record leadAssignmentHistories count");
+  assert(purgeMeta?.databaseCounts?.passwordResetTokens >= 1, "Audit metadata must record passwordResetTokens count");
+
+  // Verify null-company AuditLog records are NOT deleted
+  const nullCompAuditCount = await prisma.auditLog.count({
+    where: { companyId: null },
+  });
+  assert(typeof nullCompAuditCount === "number", "Null-company audit logs query must succeed");
   passedTests++;
-  console.log("  ✓ Test L: Audit event creation verified");
+  console.log("  ✓ Test L: Audit event creation and null-company audit log preservation verified");
 
   // ---------------------------------------------------------------------------
   // TEST M: Concurrent purge protection

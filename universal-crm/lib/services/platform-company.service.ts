@@ -19,7 +19,7 @@ import { getAppUrl } from "@/lib/config";
 import { logger } from "@/lib/logger";
 import { PlatformAuditLogService } from "./platform-audit-log.service";
 import { QuotaService } from "./quota.service";
-import { CompanyStatus, UserStatus, DataScope, PlanTier, Prisma } from "@prisma/client";
+import { CompanyStatus, UserStatus, DataScope, Prisma } from "@prisma/client";
 
 const SYSTEM_MODULES = [
   "customers",
@@ -660,6 +660,13 @@ export class PlatformCompanyService {
       });
       const roleIds = roles.map((r) => r.id);
 
+      // Find user IDs for password reset token deletion
+      const users = await tx.user.findMany({
+        where: { companyId },
+        select: { id: true },
+      });
+      const userIds = users.map((u) => u.id);
+
       // 1. Sessions
       const sessions = await tx.session.deleteMany({ where: { companyId } });
 
@@ -669,11 +676,20 @@ export class PlatformCompanyService {
       // 3. Lead Disposition History
       const leadDispositionHistories = await tx.leadDispositionHistory.deleteMany({ where: { companyId } });
 
+      // 3b. Lead Status History
+      const leadStatusHistories = await tx.leadStatusHistory.deleteMany({ where: { companyId } });
+
+      // 3c. Lead Assignment History
+      const leadAssignmentHistories = await tx.leadAssignmentHistory.deleteMany({ where: { companyId } });
+
       // 4. Custom Field Values
       const customFieldValues = await tx.customFieldValue.deleteMany({ where: { companyId } });
 
       // 5. Activities
       const activities = await tx.activity.deleteMany({ where: { companyId } });
+
+      // 5b. Notes
+      const notes = await tx.note.deleteMany({ where: { companyId } });
 
       // 6. Tasks
       const tasks = await tx.task.deleteMany({ where: { companyId } });
@@ -723,8 +739,13 @@ export class PlatformCompanyService {
         ? await tx.permission.deleteMany({ where: { roleId: { in: roleIds } } })
         : { count: 0 };
 
+      // 18b. Password Reset Tokens
+      const passwordResetTokens = userIds.length > 0
+        ? await tx.passwordResetToken.deleteMany({ where: { userId: { in: userIds } } })
+        : { count: 0 };
+
       // 19. Users
-      const users = await tx.user.deleteMany({ where: { companyId } });
+      const usersDeleted = await tx.user.deleteMany({ where: { companyId } });
 
       // 20. Roles
       const rolesDeleted = await tx.role.deleteMany({ where: { companyId } });
@@ -739,10 +760,14 @@ export class PlatformCompanyService {
 
       return {
         sessions: sessions.count,
+        passwordResetTokens: passwordResetTokens.count,
         taskRescheduleHistories: taskRescheduleHistories.count,
         leadDispositionHistories: leadDispositionHistories.count,
+        leadStatusHistories: leadStatusHistories.count,
+        leadAssignmentHistories: leadAssignmentHistories.count,
         customFieldValues: customFieldValues.count,
         activities: activities.count,
+        notes: notes.count,
         tasks: tasks.count,
         leadImports: leadImports.count,
         leads: leads.count,
@@ -759,7 +784,7 @@ export class PlatformCompanyService {
         teams: teams.count,
         auditLogs: auditLogs.count,
         permissions: permissions.count,
-        users: users.count,
+        users: usersDeleted.count,
         roles: rolesDeleted.count,
         companies: companies.count,
       };
@@ -824,10 +849,14 @@ export interface CompanyPurgeResult {
   companySlug: string;
   databaseCounts: {
     sessions: number;
+    passwordResetTokens?: number;
     taskRescheduleHistories: number;
     leadDispositionHistories: number;
+    leadStatusHistories?: number;
+    leadAssignmentHistories?: number;
     customFieldValues: number;
     activities: number;
+    notes?: number;
     tasks: number;
     leadImports: number;
     leads: number;

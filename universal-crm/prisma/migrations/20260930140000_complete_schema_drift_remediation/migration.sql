@@ -1,0 +1,22 @@
+-- AlterEnum
+ALTER TYPE "ActivityType" ADD VALUE 'TASK_UPDATED';
+ALTER TYPE "ActivityType" ADD VALUE 'TASK_DELETED';
+ALTER TYPE "ActivityType" ADD VALUE 'CALL';
+ALTER TYPE "ActivityType" ADD VALUE 'WHATSAPP';
+ALTER TYPE "ActivityType" ADD VALUE 'EMAIL';
+ALTER TYPE "ActivityType" ADD VALUE 'NOTE';
+ALTER TYPE "ActivityType" ADD VALUE 'MEETING';
+
+-- AlterTable
+ALTER TABLE "companies"
+ADD COLUMN "dateFormat" TEXT NOT NULL DEFAULT 'YYYY-MM-DD';
+
+-- AlterTable
+ALTER TABLE "roles"
+ADD COLUMN "description" TEXT;
+
+-- AlterTable
+ALTER TABLE "super_admins"
+ADD COLUMN "deletedAt" TIMESTAMP(3),
+ADD COLUMN "isActive" BOOLEAN NOT NULL DEFAULT true,
+ADD COLUMN "lastLoginAt" TIMESTAMP(3);

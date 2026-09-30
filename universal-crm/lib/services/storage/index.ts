@@ -305,11 +305,11 @@ export class R2StorageService implements StorageService {
   }
 
   async delete(key: string, expectedCompanyId?: string): Promise<void> {
-    this.ensureConfigured();
-
     if (expectedCompanyId) {
       validateTenantKey(expectedCompanyId, key);
     }
+
+    this.ensureConfigured();
 
     const command = new DeleteObjectCommand({
       Bucket: this.bucket,
@@ -333,11 +333,11 @@ export class R2StorageService implements StorageService {
     key: string,
     options?: { expiresInSeconds?: number; expectedCompanyId?: string }
   ): Promise<string> {
-    this.ensureConfigured();
-
     if (options?.expectedCompanyId) {
       validateTenantKey(options.expectedCompanyId, key);
     }
+
+    this.ensureConfigured();
 
     // Bound expiration to safe limits (between 1 second and 86400 seconds / 24 hours)
     const rawExpiry = options?.expiresInSeconds ?? 3600;
