@@ -24,9 +24,13 @@ export const provisionCompanySchema = z
       .regex(/^[a-z0-9-]+$/, "Slug must contain only lowercase letters, numbers, and hyphens"),
     initialAdminName: z.string().trim().min(1, "Initial Admin name is required").max(100),
     initialAdminEmail: z.string().trim().email("Valid initial admin email is required").toLowerCase(),
+    adminPassword: z.string().trim().min(6, "Password must be at least 6 characters").optional(),
     planTier: z.enum(PlanTiers).default("STARTER"),
     timezone: z.string().trim().default("UTC"),
     currency: z.string().trim().length(3, "Currency must be a 3-letter ISO code").toUpperCase(),
+    phone: z.string().trim().max(50).optional(),
+    limitOverrides: z.record(z.string(), z.number()).optional(),
+    featureOverrides: z.record(z.string(), z.boolean()).optional(),
   })
   .strict();
 
@@ -99,3 +103,15 @@ export const superAdminChangePasswordSchema = z
   .strict();
 
 export type SuperAdminChangePasswordInput = z.infer<typeof superAdminChangePasswordSchema>;
+
+export const bulkCompanyActionSchema = z
+  .object({
+    action: z.enum(["SUSPEND", "REACTIVATE", "CHANGE_PLAN", "PURGE"]),
+    companyIds: z.array(z.string().min(1)).min(1, "At least one company must be selected"),
+    planTier: z.enum(PlanTiers).optional(),
+    reason: z.string().trim().max(500).optional(),
+  })
+  .strict();
+
+export type BulkCompanyActionInput = z.infer<typeof bulkCompanyActionSchema>;
+

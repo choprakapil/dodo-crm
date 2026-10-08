@@ -10,7 +10,7 @@ import { AuthContext, createDbSession } from "@/lib/auth/session";
 import { NotFoundError, ValidationError, ForbiddenError } from "@/lib/errors";
 import { generateSecureToken, hashToken } from "@/lib/utils/tokens";
 import { hashPassword, validatePasswordStrength } from "@/lib/auth/password";
-import { EmailTemplates } from "@/lib/services/email";
+import { EmailTemplates, sendEmail } from "@/lib/services/email";
 import { getAppUrl } from "@/lib/config";
 import { InviteUserInput, AcceptInvitationInput } from "@/lib/validations/invitation";
 import { UserStatus } from "@prisma/client";
@@ -24,7 +24,7 @@ export class InvitationService {
       throw new ForbiddenError("Permission denied: users.manage required");
     }
 
-    const { email, roleId, teamId, name } = input;
+    const { email, roleId, teamId, name, phone } = input;
 
     // 1. Verify role belongs to tenant
     const role = await prisma.role.findFirst({
@@ -84,6 +84,7 @@ export class InvitationService {
           roleId,
           status: UserStatus.INVITED,
           name: name || existingUser?.name || email.split("@")[0],
+          phone: phone || existingUser?.phone || null,
           deletedAt: null,
         },
         create: {
@@ -91,6 +92,7 @@ export class InvitationService {
           roleId,
           email,
           name: name || email.split("@")[0],
+          phone: phone || null,
           status: UserStatus.INVITED,
         },
       });
@@ -149,9 +151,14 @@ export class InvitationService {
     // 5. Send invitation email (mock / configured provider)
     const emailTemplate = EmailTemplates.invitation(rawToken, ctx.user.name, ctx.company.name);
     emailTemplate.to = email;
-    // We can call EmailService or console log in mock
     const appUrl = getAppUrl();
     const inviteLink = `${appUrl}/app/invite/${rawToken}`;
+
+    try {
+      await sendEmail(email, emailTemplate.subject, emailTemplate.html, emailTemplate.text);
+    } catch (emailErr) {
+      console.warn("[InvitationService] Email delivery notice:", emailErr instanceof Error ? emailErr.message : emailErr);
+    }
 
     return {
       invitationId: invitation.id,
@@ -183,6 +190,11 @@ export class InvitationService {
             status: true,
           },
         },
+        invitedBy: {
+          select: {
+            name: true,
+          },
+        },
       },
     });
 
@@ -203,10 +215,47 @@ export class InvitationService {
       throw new ValidationError("The inviting organization is currently inactive");
     }
 
+    // Fetch user pre-created info, role name, and team name
+    const [targetUser, role, team] = await Promise.all([
+      prisma.user.findUnique({
+        where: {
+          companyId_email: {
+            companyId: invitation.companyId,
+            email: invitation.email,
+          },
+        },
+        select: {
+          name: true,
+          phone: true,
+          role: { select: { name: true } },
+        },
+      }),
+      invitation.roleId
+        ? prisma.role.findUnique({
+            where: { id: invitation.roleId },
+            select: { name: true },
+          })
+        : null,
+      invitation.teamId
+        ? prisma.team.findUnique({
+            where: { id: invitation.teamId },
+            select: { name: true },
+          })
+        : null,
+    ]);
+
+    const defaultUsername = invitation.email.split("@")[0];
+    const initialName = targetUser?.name && targetUser.name !== defaultUsername ? targetUser.name : "";
+
     return {
       id: invitation.id,
       email: invitation.email,
+      name: initialName,
+      phone: targetUser?.phone || "",
+      role: role?.name || targetUser?.role?.name || "Member",
+      team: team?.name || null,
       company: invitation.company,
+      inviterName: invitation.invitedBy?.name || "Team Administrator",
       expiresAt: invitation.expiresAt,
     };
   }
@@ -215,7 +264,7 @@ export class InvitationService {
    * Accept invitation, set password, activate user account, and establish session.
    */
   static async acceptInvitation(input: AcceptInvitationInput, metadata?: { userAgent?: string; ipAddress?: string }) {
-    const { token, password, name } = input;
+    const { token, password, name, phone } = input;
 
     const strength = validatePasswordStrength(password);
     if (!strength.valid) {
@@ -270,6 +319,7 @@ export class InvitationService {
           hashedPassword,
           status: UserStatus.ACTIVE,
           ...(name ? { name } : {}),
+          ...(phone ? { phone } : {}),
           lastLoginAt: new Date(),
         },
         include: {
@@ -340,3 +390,4 @@ export class InvitationService {
     };
   }
 }
+

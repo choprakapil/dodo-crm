@@ -188,7 +188,7 @@ export const EmailTemplates = {
     const link = `${getAppUrl()}/reset-password?token=${token}`;
     return {
       to: "", // Set by caller
-      subject: "Reset your Universal CRM password",
+      subject: "Reset your DODO CRM password",
       text: `Hi ${name}, reset your password here: ${link}. This link expires in 1 hour.`,
       html: `
         <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
@@ -211,7 +211,7 @@ export const EmailTemplates = {
     const link = `${getAppUrl()}/app/invite/${token}`;
     return {
       to: "", // Set by caller
-      subject: `You've been invited to ${companyName} on Universal CRM`,
+      subject: `You've been invited to ${companyName} on DODO CRM`,
       text: `Hi, ${inviterName} invited you to join ${companyName}. Accept here: ${link}. Expires in 7 days.`,
       html: `
         <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">

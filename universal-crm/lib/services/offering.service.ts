@@ -60,9 +60,9 @@ export class OfferingService {
 
     if (query.search) {
       where.OR = [
-        { name: { contains: query.search, mode: "insensitive" } },
-        { code: { contains: query.search, mode: "insensitive" } },
-        { description: { contains: query.search, mode: "insensitive" } },
+        { name: { contains: query.search } },
+        { code: { contains: query.search } },
+        { description: { contains: query.search } },
       ];
     }
 

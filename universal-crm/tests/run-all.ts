@@ -49,6 +49,11 @@ import { runCustomerBackfillDryRunTests } from "./customer-backfill-dry-run.test
 import { runCustomerCrudSecurityTests } from "./customer-crud-security.test";
 import { runPhase6CreateEnquiryOfferingTests } from "./phase6-create-enquiry-offering.test";
 import { runPhase7DispositionFollowUpTests } from "./phase7-disposition-followup.test";
+import { runPhase2DispositionHierarchyUxTests } from "./phase2-disposition-hierarchy-ux.test";
+import { runPhase3BulkCustomFieldsTests } from "./phase3-bulk-custom-fields.test";
+import { runPhase4MobileKanbanStageTests } from "./phase4-mobile-kanban-stage.test";
+import { runPhase5CsvImportIntelligenceTests } from "./phase5-csv-import-intelligence.test";
+import { runPhase6OrganizationalHierarchyTests } from "./phase6-organizational-hierarchy.test";
 import { runPhaseB0ServiceTests } from "./services-phase-b0.test";
 import { runPhaseB1ConfigTests } from "./config-phase-b1.test";
 import { runPhaseB2OnboardingTests } from "./onboarding-phase-b2.test";
@@ -57,6 +62,8 @@ import { runPhaseB4SecurityTests } from "./security-phase-b4.test";
 import { runPhaseB5ObservabilityTests } from "./observability-phase-b5.test";
 import { runPhaseB6DataSafetyTests } from "./data-safety-phase-b6.test";
 import { runPhaseB7ProductionReadinessTests } from "./readiness-phase-b7.test";
+import { runStorageUsageUnitTests } from "./storage-usage-unit.test";
+import { runStorageUsageIntegrationTests } from "./storage-usage-integration.test";
 import { prisma } from "../lib/db";
 
 async function main() {
@@ -146,6 +153,21 @@ async function main() {
     // V1.1 Phase 7: Disposition Management + Follow-Up Lifecycle Engine
     await runPhase7DispositionFollowUpTests();
 
+    // V2.0 Phase 2: Disposition Hierarchy UX & Hierarchy Safety Engine
+    await runPhase2DispositionHierarchyUxTests();
+
+    // V2.0 Phase 3: Lead Bulk Custom Field Editing
+    await runPhase3BulkCustomFieldsTests();
+
+    // V2.0 Phase 4: Mobile Kanban Stage Selector & Pipeline Stage Transitions
+    await runPhase4MobileKanbanStageTests();
+
+    // V2.0 Phase 5: CSV Import Intelligence & Header Auto-Detection
+    await runPhase5CsvImportIntelligenceTests();
+
+    // V2.0 Phase 6: Organizational Hierarchy (Division / Department / Team)
+    await runPhase6OrganizationalHierarchyTests();
+
     // Phase B.0: Production Service Implementations (Email, Storage, Rate Limiter)
     await runPhaseB0ServiceTests();
 
@@ -169,6 +191,10 @@ async function main() {
 
     // Phase B.7: Production Readiness & Operational Hardening
     await runPhaseB7ProductionReadinessTests();
+
+    // V2.0 Phase 7: Storage Usage Aggregation & Quota Telemetry
+    await runStorageUsageUnitTests();
+    await runStorageUsageIntegrationTests();
 
     const duration = ((Date.now() - startTime) / 1000).toFixed(2);
     console.log("\n====================================================================");

@@ -2,8 +2,8 @@ import { Metadata } from "next";
 import { AcceptInvitationView } from "@/components/settings/accept-invitation-view";
 
 export const metadata: Metadata = {
-  title: "Accept Invitation | Universal CRM",
-  description: "Accept your invitation to join Universal CRM",
+  title: "Accept Invitation | DODO CRM",
+  description: "Accept your invitation to join DODO CRM",
 };
 
 export default async function AcceptInviteAppPage({

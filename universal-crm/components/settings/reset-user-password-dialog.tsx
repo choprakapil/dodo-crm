@@ -68,17 +68,17 @@ export function ResetUserPasswordDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-md bg-slate-900 border-slate-800 text-slate-100">
+      <DialogContent className="sm:max-w-md bg-white border-slate-200 text-slate-900 shadow-xl">
         <DialogHeader>
           <div className="flex items-center space-x-2">
-            <div className="p-2 rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/20">
+            <div className="p-2 rounded-lg bg-amber-50 text-amber-600 border border-amber-200">
               <KeyRound className="h-5 w-5" />
             </div>
             <div>
-              <DialogTitle className="text-lg font-semibold text-slate-100">
+              <DialogTitle className="text-lg font-semibold text-slate-900">
                 Reset Password
               </DialogTitle>
-              <DialogDescription className="text-xs text-slate-400">
+              <DialogDescription className="text-xs text-slate-500">
                 Set a temporary or new password for {userName}. This will immediately revoke all active sessions.
               </DialogDescription>
             </div>
@@ -87,11 +87,11 @@ export function ResetUserPasswordDialog({
 
         {success ? (
           <div className="space-y-4 py-3">
-            <div className="p-3.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 text-xs flex items-start space-x-2.5">
-              <CheckCircle2 className="h-5 w-5 text-emerald-400 shrink-0 mt-0.5" />
+            <div className="p-3.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-start space-x-2.5">
+              <CheckCircle2 className="h-5 w-5 text-emerald-600 shrink-0 mt-0.5" />
               <div>
                 <p className="font-semibold">Password Reset Successfully</p>
-                <p className="text-slate-300 mt-1">
+                <p className="text-slate-600 mt-1">
                   The user can now log in using the new password. All prior sessions have been revoked.
                 </p>
               </div>
@@ -100,7 +100,7 @@ export function ResetUserPasswordDialog({
               <Button
                 type="button"
                 onClick={handleClose}
-                className="w-full bg-indigo-600 hover:bg-indigo-500 text-white text-xs h-9"
+                className="w-full bg-indigo-600 hover:bg-indigo-700 text-white text-xs h-9 shadow-sm"
               >
                 Close
               </Button>
@@ -109,14 +109,14 @@ export function ResetUserPasswordDialog({
         ) : (
           <form onSubmit={handleReset} className="space-y-4 py-2">
             {error && (
-              <div className="p-2.5 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs">
+              <div className="p-2.5 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-xs">
                 {error}
               </div>
             )}
 
             <div className="space-y-1.5">
-              <Label htmlFor="admin-new-password" className="text-xs text-slate-300">
-                New Temporary Password <span className="text-rose-400">*</span>
+              <Label htmlFor="admin-new-password" className="text-xs text-slate-700 font-medium">
+                New Temporary Password <span className="text-rose-500">*</span>
               </Label>
               <Input
                 id="admin-new-password"
@@ -125,7 +125,7 @@ export function ResetUserPasswordDialog({
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="bg-slate-950 border-slate-800 text-xs text-slate-100"
+                className="bg-white border-slate-200 text-xs text-slate-900 placeholder:text-slate-400 focus-visible:ring-indigo-500"
               />
             </div>
 
@@ -135,14 +135,14 @@ export function ResetUserPasswordDialog({
                 variant="outline"
                 onClick={handleClose}
                 disabled={loading}
-                className="border-slate-800 bg-slate-800/40 hover:bg-slate-800 text-slate-300 text-xs h-9"
+                className="border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs h-9"
               >
                 Cancel
               </Button>
               <Button
                 type="submit"
                 disabled={loading || !password}
-                className="bg-amber-600 hover:bg-amber-500 text-white text-xs h-9 font-medium"
+                className="bg-amber-600 hover:bg-amber-700 text-white text-xs h-9 font-medium shadow-sm"
               >
                 {loading ? (
                   <>

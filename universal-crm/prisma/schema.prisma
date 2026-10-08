@@ -11,7 +11,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "mysql"
   url      = env("DATABASE_URL")
 }
 
@@ -169,6 +169,8 @@ model Company {
   // Relations
   users                   User[]
   roles                   Role[]
+  divisions               Division[]
+  departments             Department[]
   teams                   Team[]
   leads                   Lead[]
   leadSources             LeadSource[]
@@ -191,6 +193,9 @@ model Company {
   dispositions            Disposition[]
   leadDispositionHistories LeadDispositionHistory[]
   taskRescheduleHistories TaskRescheduleHistory[]
+  notifications           Notification[]
+  comments                Comment[]
+  commentMentions         CommentMention[]
 
   @@index([planId])
   @@map("companies")
@@ -286,6 +291,12 @@ model User {
   leadDispositionsUpdated Lead[]                 @relation("LeadDispositionUpdatedBy")
   leadDispositionsChanged LeadDispositionHistory[] @relation("LeadDispositionChangedBy")
   taskHistoriesPerformed  TaskRescheduleHistory[] @relation("TaskHistoryPerformedBy")
+  notifications           Notification[]          @relation("UserNotifications")
+  initiatedNotifications  Notification[]          @relation("ActorNotifications")
+  comments                Comment[]
+  commentMentions         CommentMention[]
+  managedDivisions        Division[]              @relation("DivisionManager")
+  managedDepartments      Department[]            @relation("DepartmentManager")
 
   // Uniqueness: email must be unique within a company (not globally)
   @@unique([companyId, email])
@@ -296,27 +307,89 @@ model User {
 }
 
 // =============================================================================
+// DIVISIONS
+// Level 1 organizational unit directly under Company.
+// =============================================================================
+
+model Division {
+  id          String       @id @default(cuid())
+  companyId   String
+  name        String
+  code        String?
+  description String?      @db.Text
+  managerId   String?
+  isActive    Boolean      @default(true)
+  deletedAt   DateTime?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  company     Company      @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  manager     User?        @relation("DivisionManager", fields: [managerId], references: [id], onDelete: SetNull)
+  departments Department[]
+
+  @@unique([companyId, name])
+  @@index([companyId])
+  @@index([companyId, isActive])
+  @@index([companyId, deletedAt])
+  @@map("divisions")
+}
+
+// =============================================================================
+// DEPARTMENTS
+// Level 2 organizational unit under Division, containing Teams.
+// =============================================================================
+
+model Department {
+  id          String    @id @default(cuid())
+  companyId   String
+  divisionId  String
+  name        String
+  code        String?
+  description String?   @db.Text
+  managerId   String?
+  isActive    Boolean   @default(true)
+  deletedAt   DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  company     Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  division    Division  @relation(fields: [divisionId], references: [id], onDelete: Restrict)
+  manager     User?     @relation("DepartmentManager", fields: [managerId], references: [id], onDelete: SetNull)
+  teams       Team[]
+
+  @@unique([companyId, divisionId, name])
+  @@index([companyId])
+  @@index([divisionId])
+  @@index([companyId, isActive])
+  @@index([companyId, deletedAt])
+  @@map("departments")
+}
+
+// =============================================================================
 // TEAMS
 // =============================================================================
 
 model Team {
-  id          String   @id @default(cuid())
-  companyId   String
-  name        String
-  description String?  @db.Text
-  managerId   String?
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id           String      @id @default(cuid())
+  companyId    String
+  departmentId String?
+  name         String
+  description  String?     @db.Text
+  managerId    String?
+  isActive     Boolean     @default(true)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
 
-  company Company      @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  manager User?        @relation("TeamManager", fields: [managerId], references: [id])
-  members TeamMember[]
-  leads   Lead[]
-  tasks   Task[]
+  company    Company     @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  department Department? @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  manager    User?       @relation("TeamManager", fields: [managerId], references: [id])
+  members    TeamMember[]
+  leads      Lead[]
+  tasks      Task[]
 
   @@unique([companyId, name])
   @@index([companyId])
+  @@index([departmentId])
   @@index([companyId, isActive])
   @@map("teams")
 }
@@ -1072,5 +1145,73 @@ model PlatformAuditLog {
   @@index([entityType, entityId])
   @@index([createdAt(sort: Desc)])
   @@map("platform_audit_logs")
+}
+
+// =============================================================================
+// NOTIFICATIONS
+// In-app notifications with SWR polling and deep-link routing.
+// =============================================================================
+
+model Notification {
+  id         String    @id @default(cuid())
+  companyId  String
+  userId     String    // Recipient
+  actorId    String?   // Initiator (null if system action)
+  type       String    // "ASSIGNMENT", "TASK_DUE", "TASK_OVERDUE", "MENTION", "DEAL_STAGE", "COMMENT", "SYSTEM"
+  title      String
+  message    String    @db.Text
+  entityType String?   // "LEAD", "CUSTOMER", "DEAL", "TASK"
+  entityId   String?
+  deepLink   String    // Click destination
+  readAt     DateTime? // Null = Unread, Timestamp = Read
+  createdAt  DateTime  @default(now())
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  user    User    @relation("UserNotifications", fields: [userId], references: [id], onDelete: Cascade)
+  actor   User?   @relation("ActorNotifications", fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([companyId, userId, readAt])
+  @@index([userId, createdAt(sort: Desc)])
+  @@map("notifications")
+}
+
+// =============================================================================
+// COMMENTS & MENTIONS
+// Dedicated internal collaboration threads with author grace period & @mentions.
+// =============================================================================
+
+model Comment {
+  id         String           @id @default(cuid())
+  companyId  String
+  entityType String           // "LEAD" | "CUSTOMER" | "DEAL" | "TASK"
+  entityId   String
+  authorId   String
+  content    String           @db.Text
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+  deletedAt  DateTime?
+
+  company  Company          @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  author   User             @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  mentions CommentMention[]
+
+  @@index([companyId, entityType, entityId])
+  @@index([companyId, deletedAt])
+  @@map("comments")
+}
+
+model CommentMention {
+  id              String   @id @default(cuid())
+  companyId       String
+  commentId       String
+  mentionedUserId String
+  createdAt       DateTime @default(now())
+
+  company       Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  comment       Comment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  mentionedUser User    @relation(fields: [mentionedUserId], references: [id], onDelete: Cascade)
+
+  @@index([companyId, mentionedUserId])
+  @@map("comment_mentions")
 }
 

@@ -11,7 +11,7 @@ export interface HelpArticle {
 }
 
 export const HELP_CATEGORIES = [
-  { id: "getting-started", title: "Getting Started", description: "Learn the basics of Universal CRM", adminOnly: false },
+  { id: "getting-started", title: "Getting Started", description: "Learn the basics of DODO CRM", adminOnly: false },
   { id: "leads", title: "Lead Management", description: "Capturing, organizing, and qualifying leads", adminOnly: false },
   { id: "activities", title: "Activities & Timeline", description: "Logging calls, WhatsApp, emails, notes, and meetings", adminOnly: false },
   { id: "follow-ups", title: "Follow-up Tasks", description: "Managing reminders, due dates, and task completion", adminOnly: false },
@@ -30,15 +30,15 @@ export const HELP_CATEGORIES = [
 export const HELP_ARTICLES: HelpArticle[] = [
   {
     slug: "getting-started",
-    title: "Getting Started with Universal CRM",
+    title: "Getting Started with DODO CRM",
     category: "getting-started",
     categoryTitle: "Getting Started",
     summary: "An introduction to logging in, navigating the CRM, and understanding your workspace.",
     tags: ["login", "navigation", "dashboard", "overview"],
     content: `
-# Getting Started with Universal CRM
+# Getting Started with DODO CRM
 
-Welcome to **Universal CRM**, a modern, multi-tenant customer relationship management platform designed for speed, clarity, and security.
+Welcome to **DODO CRM**, a modern, multi-tenant customer relationship management platform designed for speed, clarity, and security.
 
 ---
 
@@ -205,7 +205,7 @@ When a lead is deleted:
     content: `
 # Activities & Lead Timeline
 
-The Universal CRM timeline gives you a 360-degree chronological audit of every customer touchpoint and automated system event.
+The DODO CRM timeline gives you a 360-degree chronological audit of every customer touchpoint and automated system event.
 
 ---
 
@@ -304,7 +304,7 @@ When you finish a task:
     content: `
 # Lead Import & Export Operations
 
-Universal CRM includes a high-performance, streaming RFC 4180 CSV engine built from the ground up for reliable bulk data migration.
+DODO CRM includes a high-performance, streaming RFC 4180 CSV engine built from the ground up for reliable bulk data migration.
 
 ---
 
@@ -358,13 +358,13 @@ Exported files automatically neutralize malicious spreadsheet formulas:
     content: `
 # Configuring Dynamic Custom Fields
 
-Every business is unique. Universal CRM allows administrators to add company-specific fields without altering database code or slowing down queries.
+Every business is unique. DODO CRM allows administrators to add company-specific fields without altering database code or slowing down queries.
 
 ---
 
 ## 1. Supported Custom Field Types
 
-Universal CRM supports 11 normalized field types:
+DODO CRM supports 11 normalized field types:
 1. **TEXT**: Single-line text (e.g. "VAT Number", "Referral Code").
 2. **TEXTAREA**: Multi-line description (e.g. "Special Delivery Instructions").
 3. **NUMBER**: Integers or floating-point figures (e.g. "Number of Employees").
@@ -516,7 +516,7 @@ To retire a team without corrupting historical lead assignments:
     content: `
 # Roles, Permissions & Data Scopes
 
-Universal CRM implements a strict, centralized Role-Based Access Control (RBAC) model with multi-tenant data scoping.
+DODO CRM implements a strict, centralized Role-Based Access Control (RBAC) model with multi-tenant data scoping.
 
 ---
 
@@ -608,7 +608,7 @@ All updates made in Company Settings are atomically logged in the company's audi
     content: `
 # Account Security & Active Session Management
 
-Universal CRM provides self-service security tools at \`/app/settings/security\` so every user can monitor and protect their account.
+DODO CRM provides self-service security tools at \`/app/settings/security\` so every user can monitor and protect their account.
 
 ---
 
@@ -700,7 +700,7 @@ Click the **View Details** button on any audit record to open the structured JSO
 # Frequently Asked Questions (FAQ)
 
 ### Q: Why can't I see all the leads in my company?
-**A:** Universal CRM enforces strict **Data Scoping**. If you have a **Sales Rep** role, you can only see leads assigned directly to you (\`OWN\` scope). If you have a **Manager** role, you see leads assigned to members of your team (\`TEAM\` scope). Only **Admins** have organization-wide visibility (\`COMPANY\` scope).
+**A:** DODO CRM enforces strict **Data Scoping**. If you have a **Sales Rep** role, you can only see leads assigned directly to you (\`OWN\` scope). If you have a **Manager** role, you see leads assigned to members of your team (\`TEAM\` scope). Only **Admins** have organization-wide visibility (\`COMPANY\` scope).
 
 ---
 

@@ -15,13 +15,13 @@ export function LeadTrendChart({ trends, loading }: LeadTrendChartProps) {
 
   if (loading) {
     return (
-      <Card className="border-slate-800 bg-slate-900/60 backdrop-blur animate-pulse">
+      <Card className="border-slate-200/90 bg-white shadow-2xs animate-pulse">
         <CardHeader className="pb-2">
-          <div className="h-5 w-40 bg-slate-800 rounded mb-1" />
-          <div className="h-3 w-60 bg-slate-800/80 rounded" />
+          <div className="h-5 w-40 bg-slate-100 rounded mb-1" />
+          <div className="h-3 w-60 bg-slate-100 rounded" />
         </CardHeader>
         <CardContent className="h-56 flex items-center justify-center">
-          <div className="h-40 w-full bg-slate-800/40 rounded-lg" />
+          <div className="h-40 w-full bg-slate-50 rounded-lg" />
         </CardContent>
       </Card>
     );
@@ -31,10 +31,10 @@ export function LeadTrendChart({ trends, loading }: LeadTrendChartProps) {
 
   if (trends.length === 0) {
     return (
-      <Card className="border-slate-800 bg-slate-900/60 backdrop-blur">
+      <Card className="border-slate-200/90 bg-white shadow-2xs">
         <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-semibold text-slate-200 flex items-center gap-2">
-            <TrendingUp className="h-4 w-4 text-indigo-400" />
+          <CardTitle className="text-sm font-semibold text-slate-800 flex items-center gap-2">
+            <TrendingUp className="h-4 w-4 text-indigo-600" />
             <span>Lead Creation Trend</span>
           </CardTitle>
         </CardHeader>
@@ -74,22 +74,22 @@ export function LeadTrendChart({ trends, loading }: LeadTrendChartProps) {
       : "";
 
   return (
-    <Card className="border-slate-800 bg-slate-900/60 backdrop-blur shadow-sm">
+    <Card className="border-slate-200/90 bg-white shadow-2xs">
       <CardHeader className="flex flex-row items-center justify-between pb-2">
         <div>
-          <CardTitle className="text-sm font-semibold text-slate-200 flex items-center gap-2">
-            <TrendingUp className="h-4 w-4 text-indigo-400" />
+          <CardTitle className="text-sm font-semibold text-slate-900 flex items-center gap-2">
+            <TrendingUp className="h-4 w-4 text-indigo-600" />
             <span>Lead Creation Trend</span>
           </CardTitle>
-          <p className="text-xs text-slate-400 mt-0.5">
+          <p className="text-xs text-slate-500 mt-0.5">
             {totalLeadsInTrend} leads created over this timeframe
           </p>
         </div>
 
         {hoveredIndex !== null && (
-          <div className="bg-slate-800/90 border border-slate-700 px-2.5 py-1 rounded-lg text-xs shadow">
-            <span className="text-slate-400 mr-1.5">{trends[hoveredIndex].label}:</span>
-            <span className="font-bold text-white">{trends[hoveredIndex].leads} leads</span>
+          <div className="bg-white border border-slate-200 px-3 py-1.5 rounded-lg text-xs shadow-md">
+            <span className="text-slate-500 mr-1.5">{trends[hoveredIndex].label}:</span>
+            <span className="font-bold text-slate-900">{trends[hoveredIndex].leads} leads</span>
           </div>
         )}
       </CardHeader>
@@ -102,8 +102,8 @@ export function LeadTrendChart({ trends, loading }: LeadTrendChartProps) {
           >
             <defs>
               <linearGradient id="trendGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#6366f1" stopOpacity="0.4" />
-                <stop offset="100%" stopColor="#6366f1" stopOpacity="0.0" />
+                <stop offset="0%" stopColor="#4f46e5" stopOpacity="0.18" />
+                <stop offset="100%" stopColor="#4f46e5" stopOpacity="0.0" />
               </linearGradient>
             </defs>
 
@@ -118,7 +118,7 @@ export function LeadTrendChart({ trends, loading }: LeadTrendChartProps) {
                     y1={y}
                     x2={width - paddingX}
                     y2={y}
-                    stroke="#334155"
+                    stroke="#e2e8f0"
                     strokeDasharray="3 3"
                     strokeWidth="0.8"
                   />
@@ -143,7 +143,7 @@ export function LeadTrendChart({ trends, loading }: LeadTrendChartProps) {
               <path
                 d={pathD}
                 fill="none"
-                stroke="#6366f1"
+                stroke="#4f46e5"
                 strokeWidth="2.5"
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -162,8 +162,8 @@ export function LeadTrendChart({ trends, loading }: LeadTrendChartProps) {
                   cx={p.x}
                   cy={p.y}
                   r={hoveredIndex === i ? 6 : 3.5}
-                  fill={hoveredIndex === i ? "#ffffff" : "#6366f1"}
-                  stroke="#4338ca"
+                  fill={hoveredIndex === i ? "#4f46e5" : "#ffffff"}
+                  stroke="#4f46e5"
                   strokeWidth="2"
                   className="transition-all"
                 />
@@ -182,7 +182,7 @@ export function LeadTrendChart({ trends, loading }: LeadTrendChartProps) {
                   key={i}
                   x={p.x}
                   y={height - 8}
-                  fill="#94a3b8"
+                  fill="#64748b"
                   fontSize="10"
                   textAnchor="middle"
                 >

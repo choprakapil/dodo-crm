@@ -43,6 +43,16 @@ export default async function TeamsPage({ searchParams }: TeamsPageProps) {
     id: string;
     name: string;
     description: string | null;
+    departmentId?: string | null;
+    department?: {
+      id: string;
+      name: string;
+      divisionId: string;
+      division?: {
+        id: string;
+        name: string;
+      } | null;
+    } | null;
     isActive: boolean;
     createdAt: Date;
     manager: { id: string; name: string; email: string } | null;
@@ -52,6 +62,8 @@ export default async function TeamsPage({ searchParams }: TeamsPageProps) {
     id: t.id,
     name: t.name,
     description: t.description,
+    departmentId: t.departmentId,
+    department: t.department,
     isActive: t.isActive,
     createdAt: t.createdAt.toISOString(),
     manager: t.manager,
@@ -62,27 +74,17 @@ export default async function TeamsPage({ searchParams }: TeamsPageProps) {
   const canManage = authContext.hasPermission("teams", "manage");
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
-      <LeadNav
-        companyName={authContext.company.name}
-        companySlug={authContext.company.slug}
-        userName={authContext.user.name}
-        userEmail={authContext.user.email}
-        roleName={authContext.role.name}
+    <div className="flex-1 space-y-6 p-4 sm:p-8 max-w-7xl mx-auto">
+      <SettingsNav />
+
+      <TeamWorkspace
+        initialTeams={serializedTeams}
+        total={result.pagination.total}
+        currentPage={result.pagination.page}
+        totalPages={result.pagination.totalPages}
+        initialSearch={search}
+        canManage={canManage}
       />
-
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-8 py-6">
-        <SettingsNav />
-
-        <TeamWorkspace
-          initialTeams={serializedTeams}
-          total={result.pagination.total}
-          currentPage={result.pagination.page}
-          totalPages={result.pagination.totalPages}
-          initialSearch={search}
-          canManage={canManage}
-        />
-      </main>
     </div>
   );
 }

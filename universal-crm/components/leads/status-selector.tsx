@@ -58,18 +58,18 @@ export function StatusSelector({
         style={{
           borderColor: currentStatus?.color ? `${currentStatus.color}40` : undefined,
           backgroundColor: currentStatus?.color ? `${currentStatus.color}15` : undefined,
-          color: currentStatus?.color || "#cbd5e1",
+          color: currentStatus?.color || "#334155",
         }}
-        className="h-7 rounded-md border px-2 text-[11px] font-medium outline-none transition disabled:opacity-50 cursor-pointer"
+        className="h-7 rounded-md border px-2 text-[11px] font-semibold outline-hidden transition disabled:opacity-50 cursor-pointer shadow-2xs"
       >
         {statuses.map((s) => (
-          <option key={s.id} value={s.id} className="bg-slate-900 text-slate-200">
+          <option key={s.id} value={s.id} className="bg-white text-slate-900 font-medium">
             {s.name}
           </option>
         ))}
       </select>
       {isUpdating && (
-        <Loader2 className="absolute right-1.5 h-3 w-3 animate-spin text-slate-400 pointer-events-none" />
+        <Loader2 className="absolute right-1.5 h-3 w-3 animate-spin text-slate-500 pointer-events-none" />
       )}
     </div>
   );

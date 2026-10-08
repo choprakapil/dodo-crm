@@ -55,10 +55,10 @@ export function DateRangePicker({
   };
 
   return (
-    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-slate-900/40 p-2.5 rounded-xl border border-slate-800">
+    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-white p-2.5 rounded-xl border border-slate-200/90 shadow-2xs">
       <div className="flex flex-wrap items-center gap-1.5">
-        <div className="flex items-center space-x-1.5 px-2.5 py-1 text-xs font-semibold text-slate-400">
-          <Calendar className="h-3.5 w-3.5 text-indigo-400" />
+        <div className="flex items-center space-x-1.5 px-2.5 py-1 text-xs font-semibold text-slate-500">
+          <Calendar className="h-3.5 w-3.5 text-indigo-600" />
           <span>Range:</span>
         </div>
 
@@ -69,8 +69,8 @@ export function DateRangePicker({
               onClick={() => handlePresetSelect(item.preset)}
               className={`px-2.5 py-1 rounded-lg text-xs font-medium transition ${
                 preset === item.preset
-                  ? "bg-indigo-600 text-white shadow-sm"
-                  : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/80"
+                  ? "bg-indigo-600 text-white font-semibold shadow-2xs"
+                  : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
               }`}
             >
               {item.label}
@@ -86,7 +86,7 @@ export function DateRangePicker({
               type="date"
               value={customFrom}
               onChange={(e) => setCustomFrom(e.target.value)}
-              className="bg-slate-950 border border-slate-800 rounded-lg px-2 py-1 text-xs text-slate-200 focus:outline-none focus:border-indigo-500"
+              className="bg-white border border-slate-200 rounded-lg px-2.5 py-1 text-xs text-slate-800 focus:outline-hidden focus:ring-1 focus:ring-indigo-500"
               required
             />
             <span className="text-xs text-slate-500">to</span>
@@ -94,13 +94,13 @@ export function DateRangePicker({
               type="date"
               value={customTo}
               onChange={(e) => setCustomTo(e.target.value)}
-              className="bg-slate-950 border border-slate-800 rounded-lg px-2 py-1 text-xs text-slate-200 focus:outline-none focus:border-indigo-500"
+              className="bg-white border border-slate-200 rounded-lg px-2.5 py-1 text-xs text-slate-800 focus:outline-hidden focus:ring-1 focus:ring-indigo-500"
               required
             />
             <Button
               type="submit"
               size="sm"
-              className="h-7 px-2.5 text-xs bg-indigo-600 hover:bg-indigo-500 text-white"
+              className="h-7 px-2.5 text-xs bg-indigo-600 hover:bg-indigo-700 text-white shadow-2xs"
             >
               Apply
             </Button>
@@ -112,11 +112,11 @@ export function DateRangePicker({
           disabled={loading}
           variant="outline"
           size="sm"
-          className="h-8 px-2.5 border-slate-800 bg-slate-900/60 hover:bg-slate-800 text-slate-300 text-xs font-medium"
+          className="h-8 px-2.5 border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-medium shadow-2xs"
         >
           <RefreshCw
-            className={`h-3.5 w-3.5 mr-1.5 text-slate-400 ${
-              loading ? "animate-spin text-indigo-400" : ""
+            className={`h-3.5 w-3.5 mr-1.5 text-slate-500 ${
+              loading ? "animate-spin text-indigo-600" : ""
             }`}
           />
           <span>Refresh</span>

@@ -7,7 +7,7 @@ import { withObservability } from "@/lib/observability";
 import { NextRequest, NextResponse } from "next/server";
 import { SuperAdminAuthService } from "@/lib/services/super-admin-auth.service";
 import { superAdminLoginSchema } from "@/lib/validations/platform";
-import { setSuperAdminSessionCookie } from "@/lib/auth/cookies";
+import { setSuperAdminSessionCookie, clearSessionCookie } from "@/lib/auth/cookies";
 import { rateLimiter, RateLimits } from "@/lib/services/rate-limit";
 import { handleApiError, RateLimitError } from "@/lib/errors";
 
@@ -61,8 +61,11 @@ export const POST = withObservability(async function POST(req: NextRequest) {
       userAgent,
     });
 
-    // 5. Set Super Admin HTTP-only session cookie
+    // 5. Set Super Admin HTTP-only session cookie (and evict tenant cookie if present)
     await setSuperAdminSessionCookie(rawToken);
+    if (req.cookies.has("universal_crm_session")) {
+      await clearSessionCookie();
+    }
 
     return NextResponse.json(
       {

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Building2, HelpCircle } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "Company Settings | Universal CRM",
+  title: "Company Settings | DODO CRM",
   description: "Manage organization details, profile, branding, and localization standards",
 };
 

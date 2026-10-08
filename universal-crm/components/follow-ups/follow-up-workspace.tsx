@@ -244,26 +244,26 @@ export function FollowUpWorkspace({
   function getPriorityBadge(priority: string) {
     switch (priority) {
       case "URGENT":
-        return <Badge className="bg-rose-500/15 text-rose-400 border-rose-500/30 text-[10px]">Urgent</Badge>;
+        return <Badge className="bg-rose-50 text-rose-700 border-rose-200 text-[10px] font-semibold shadow-2xs">Urgent</Badge>;
       case "HIGH":
-        return <Badge className="bg-amber-500/15 text-amber-400 border-amber-500/30 text-[10px]">High</Badge>;
+        return <Badge className="bg-amber-50 text-amber-700 border-amber-200 text-[10px] font-semibold shadow-2xs">High</Badge>;
       case "MEDIUM":
-        return <Badge className="bg-indigo-500/15 text-indigo-400 border-indigo-500/30 text-[10px]">Medium</Badge>;
+        return <Badge className="bg-indigo-50 text-indigo-700 border-indigo-200 text-[10px] font-semibold shadow-2xs">Medium</Badge>;
       case "LOW":
-        return <Badge className="bg-slate-800 text-slate-400 border-slate-700 text-[10px]">Low</Badge>;
+        return <Badge className="bg-slate-100 text-slate-600 border-slate-200 text-[10px] font-medium shadow-2xs">Low</Badge>;
     }
   }
 
   function getStatusBadge(status: string) {
     switch (status) {
       case "COMPLETED":
-        return <Badge className="bg-emerald-500/10 text-emerald-400 border-emerald-500/30 text-[10px]">Completed</Badge>;
+        return <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200 text-[10px] font-semibold shadow-2xs">Completed</Badge>;
       case "CANCELLED":
-        return <Badge className="bg-rose-500/10 text-rose-400 border-rose-500/30 text-[10px]">Cancelled</Badge>;
+        return <Badge className="bg-rose-50 text-rose-700 border-rose-200 text-[10px] font-semibold shadow-2xs">Cancelled</Badge>;
       case "OVERDUE":
-        return <Badge className="bg-red-500/15 text-red-400 border-red-500/30 text-[10px]">Overdue</Badge>;
+        return <Badge className="bg-rose-50 text-rose-700 border-rose-200 text-[10px] font-semibold shadow-2xs">Overdue</Badge>;
       case "PENDING":
-        return <Badge className="bg-blue-500/10 text-blue-400 border-blue-500/30 text-[10px]">Pending</Badge>;
+        return <Badge className="bg-slate-100 text-slate-700 border-slate-200 text-[10px] font-medium shadow-2xs">Pending</Badge>;
     }
   }
 
@@ -283,7 +283,7 @@ export function FollowUpWorkspace({
   return (
     <div className="space-y-4">
       {/* Search and Tabs Bar */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-slate-800 pb-4">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-slate-200 pb-4">
         {/* Tabs */}
         <div className="flex flex-wrap items-center gap-1">
           {filterTabs.map((tab) => (
@@ -293,8 +293,8 @@ export function FollowUpWorkspace({
               onClick={() => handleTabChange(tab.key)}
               className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${
                 activeTab === tab.key
-                  ? "bg-indigo-600/15 text-indigo-400 border border-indigo-500/30"
-                  : "text-slate-400 hover:text-slate-200 hover:bg-slate-900"
+                  ? "bg-indigo-50 text-indigo-700 border border-indigo-200 shadow-2xs font-semibold"
+                  : "text-slate-500 hover:text-slate-900 hover:bg-slate-100"
               }`}
             >
               {tab.label}
@@ -309,7 +309,7 @@ export function FollowUpWorkspace({
             variant="outline"
             onClick={handleSyncOverdue}
             disabled={syncingOverdue}
-            className="border-slate-800 bg-slate-900 hover:bg-slate-800 text-slate-300 text-xs h-8 px-2.5 gap-1.5"
+            className="border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs h-8 px-2.5 gap-1.5 shadow-2xs"
             title="Check and transition past-due pending tasks to overdue"
           >
             <RefreshCw className={`h-3 w-3 ${syncingOverdue ? "animate-spin" : ""}`} />
@@ -318,19 +318,18 @@ export function FollowUpWorkspace({
 
           <form onSubmit={handleSearchSubmit} className="flex items-center gap-2">
             <div className="relative">
-              <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-slate-500" />
+              <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-slate-400" />
               <Input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search follow-ups or leads..."
-                className="pl-8 bg-slate-900/80 border-slate-800 text-xs h-8 text-white w-56 focus-visible:ring-indigo-500"
+                className="pl-8 bg-white border-slate-200 text-xs h-8 text-slate-900 placeholder:text-slate-400 w-56 focus-visible:ring-1 focus-visible:ring-indigo-500 shadow-2xs"
               />
             </div>
             <Button
               type="submit"
               size="sm"
-              variant="outline"
-              className="border-slate-800 bg-slate-900 hover:bg-slate-800 text-slate-300 text-xs h-8 px-3"
+              className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-xs h-8 px-3 shadow-2xs"
             >
               Search
             </Button>
@@ -339,10 +338,10 @@ export function FollowUpWorkspace({
       </div>
 
       {/* Follow-up Table */}
-      <div className="rounded-xl border border-slate-800 bg-slate-900/40 backdrop-blur overflow-hidden">
+      <div className="rounded-xl border border-slate-200/90 bg-white overflow-hidden shadow-2xs">
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs text-slate-300">
-            <thead className="bg-slate-950/80 text-[11px] font-semibold text-slate-400 uppercase tracking-wider border-b border-slate-800">
+          <table className="w-full text-left text-xs text-slate-700">
+            <thead className="bg-slate-50/80 text-[11px] font-semibold text-slate-600 uppercase tracking-wider border-b border-slate-200">
               <tr>
                 <th className="py-3 px-4">Status</th>
                 <th className="py-3 px-4">Follow-up Task</th>
@@ -353,13 +352,13 @@ export function FollowUpWorkspace({
                 <th className="py-3 px-4 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800/60">
+            <tbody className="divide-y divide-slate-100">
               {initialItems.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="py-12 text-center text-slate-500">
-                    <Clock className="h-8 w-8 mx-auto mb-2 text-slate-600 opacity-60" />
-                    <p className="text-sm font-medium text-slate-400">No follow-ups found</p>
-                    <p className="text-xs text-slate-600 mt-0.5">
+                  <td colSpan={7} className="py-12 text-center text-slate-400">
+                    <Clock className="h-8 w-8 mx-auto mb-2 text-slate-300" />
+                    <p className="text-sm font-semibold text-slate-800">No follow-ups found</p>
+                    <p className="text-xs text-slate-500 mt-0.5">
                       No follow-ups match your current filter criteria.
                     </p>
                   </td>
@@ -374,67 +373,67 @@ export function FollowUpWorkspace({
                   return (
                     <tr
                       key={item.id}
-                      className="hover:bg-slate-800/30 transition group"
+                      className="hover:bg-slate-50/70 transition group"
                     >
-                      <td className="py-3 px-4 whitespace-nowrap">
+                      <td className="py-2.5 px-4 whitespace-nowrap">
                         {getStatusBadge(item.status)}
                       </td>
-                      <td className="py-3 px-4">
-                        <div className="font-medium text-white">{item.title}</div>
+                      <td className="py-2.5 px-4">
+                        <div className="font-semibold text-slate-900">{item.title}</div>
                         {item.description && (
-                          <div className="text-slate-400 text-[11px] line-clamp-1 mt-0.5">
+                          <div className="text-slate-500 text-[11px] line-clamp-1 mt-0.5">
                             {item.description}
                           </div>
                         )}
                       </td>
-                      <td className="py-3 px-4 whitespace-nowrap">
+                      <td className="py-2.5 px-4 whitespace-nowrap">
                         {item.lead ? (
                           <Link
                             href={`/app/leads/${item.lead.id}`}
-                            className="font-medium text-indigo-400 hover:text-indigo-300 hover:underline"
+                            className="font-medium text-slate-900 hover:text-indigo-600 hover:underline transition"
                           >
                             {item.lead.name}
                           </Link>
                         ) : (
-                          <span className="text-slate-500 italic">No Lead Linked</span>
+                          <span className="text-slate-400 italic">No Lead Linked</span>
                         )}
                       </td>
-                      <td className="py-3 px-4 whitespace-nowrap">
+                      <td className="py-2.5 px-4 whitespace-nowrap">
                         {item.assignedUser ? (
-                          <div className="flex items-center gap-1.5 text-slate-300">
-                            <User className="h-3 w-3 text-slate-500" />
+                          <div className="flex items-center gap-1.5 text-slate-700">
+                            <User className="h-3 w-3 text-slate-400" />
                             <span>{item.assignedUser.name}</span>
                           </div>
                         ) : (
-                          <span className="text-slate-500 italic">Unassigned</span>
+                          <span className="text-slate-400 italic">Unassigned</span>
                         )}
                       </td>
-                      <td className="py-3 px-4 whitespace-nowrap font-mono text-[11px]">
+                      <td className="py-2.5 px-4 whitespace-nowrap font-mono text-[11px]">
                         <div className="flex items-center gap-1.5">
                           {isOverdue ? (
-                            <span className="flex items-center gap-1 text-rose-400 font-semibold">
-                              <AlertTriangle className="h-3 w-3" />
+                            <span className="flex items-center gap-1 text-rose-700 font-semibold">
+                              <AlertTriangle className="h-3 w-3 text-rose-600" />
                               {formatDateTime(item.dueAt)}
                             </span>
                           ) : (
-                            <span className="text-slate-300 flex items-center gap-1">
-                              <Clock className="h-3 w-3 text-slate-500" />
+                            <span className="text-slate-700 flex items-center gap-1">
+                              <Clock className="h-3 w-3 text-slate-400" />
                               {formatDateTime(item.dueAt)}
                             </span>
                           )}
                         </div>
                       </td>
-                      <td className="py-3 px-4 whitespace-nowrap">
+                      <td className="py-2.5 px-4 whitespace-nowrap">
                         {getPriorityBadge(item.priority)}
                       </td>
-                      <td className="py-3 px-4 text-right whitespace-nowrap">
+                      <td className="py-2.5 px-4 text-right whitespace-nowrap">
                         <div className="flex items-center justify-end gap-1.5">
                           {/* History Button */}
                           <Button
                             size="sm"
                             variant="ghost"
                             onClick={() => openHistory(item)}
-                            className="text-slate-400 hover:text-slate-200 text-[11px] h-7 px-1.5"
+                            className="text-slate-400 hover:text-slate-800 text-[11px] h-7 px-1.5 hover:bg-slate-100"
                             title="View Follow-up Lifecycle History"
                           >
                             <HistoryIcon className="h-3.5 w-3.5" />
@@ -446,10 +445,10 @@ export function FollowUpWorkspace({
                               size="sm"
                               variant="outline"
                               onClick={() => openReschedule(item)}
-                              className="border-slate-700 bg-slate-800/80 hover:bg-slate-700 text-slate-300 text-[11px] h-7 px-2 gap-1"
+                              className="border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-[11px] h-7 px-2 gap-1 shadow-2xs"
                               title="Reschedule Follow-up"
                             >
-                              <Calendar className="h-3 w-3" />
+                              <Calendar className="h-3 w-3 text-slate-500" />
                               <span>Reschedule</span>
                             </Button>
                           )}
@@ -461,7 +460,7 @@ export function FollowUpWorkspace({
                               variant="outline"
                               onClick={() => handleComplete(item.id)}
                               disabled={completingId === item.id}
-                              className="border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 text-[11px] h-7 px-2 gap-1"
+                              className="border-emerald-200 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-[11px] h-7 px-2 gap-1 shadow-2xs font-medium"
                             >
                               {completingId === item.id ? (
                                 <Loader2 className="h-3 w-3 animate-spin" />
@@ -477,7 +476,7 @@ export function FollowUpWorkspace({
                             variant="ghost"
                             onClick={() => handleDelete(item.id)}
                             disabled={deletingId === item.id}
-                            className="text-slate-500 hover:text-rose-400 text-[11px] h-7 px-1.5"
+                            className="text-slate-400 hover:text-rose-600 text-[11px] h-7 px-1.5 hover:bg-slate-100"
                           >
                             <Trash2 className="h-3 w-3" />
                           </Button>
@@ -493,17 +492,17 @@ export function FollowUpWorkspace({
 
         {/* Pagination Bar */}
         {pagination.totalPages > 1 && (
-          <div className="flex items-center justify-between px-4 py-3 border-t border-slate-800 bg-slate-950/60 text-xs text-slate-400">
+          <div className="flex items-center justify-between px-4 py-2.5 border-t border-slate-200 bg-slate-50/70 text-xs text-slate-600">
             <div>
               Showing{" "}
-              <span className="font-medium text-white">
+              <span className="font-semibold text-slate-800">
                 {(pagination.page - 1) * pagination.pageSize + 1}
               </span>{" "}
               to{" "}
-              <span className="font-medium text-white">
+              <span className="font-semibold text-slate-800">
                 {Math.min(pagination.page * pagination.pageSize, pagination.totalCount)}
               </span>{" "}
-              of <span className="font-medium text-white">{pagination.totalCount}</span> follow-ups
+              of <span className="font-semibold text-slate-800">{pagination.totalCount}</span> follow-ups
             </div>
 
             <div className="flex items-center gap-1">
@@ -512,11 +511,11 @@ export function FollowUpWorkspace({
                 variant="outline"
                 disabled={pagination.page <= 1}
                 onClick={() => applyFilter(activeTab, search, pagination.page - 1)}
-                className="h-7 w-7 p-0 border-slate-800 bg-slate-900 text-slate-300 disabled:opacity-40"
+                className="h-7 w-7 p-0 border-slate-200 bg-white text-slate-700 disabled:opacity-40 shadow-2xs"
               >
                 <ChevronLeft className="h-3.5 w-3.5" />
               </Button>
-              <span className="px-2 font-mono text-[11px]">
+              <span className="px-2 font-mono text-[11px] text-slate-500">
                 {pagination.page} / {pagination.totalPages}
               </span>
               <Button
@@ -524,7 +523,7 @@ export function FollowUpWorkspace({
                 variant="outline"
                 disabled={pagination.page >= pagination.totalPages}
                 onClick={() => applyFilter(activeTab, search, pagination.page + 1)}
-                className="h-7 w-7 p-0 border-slate-800 bg-slate-900 text-slate-300 disabled:opacity-40"
+                className="h-7 w-7 p-0 border-slate-200 bg-white text-slate-700 disabled:opacity-40 shadow-2xs"
               >
                 <ChevronRight className="h-3.5 w-3.5" />
               </Button>

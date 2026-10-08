@@ -216,35 +216,35 @@ export function CustomFieldWorkspace({ initialFields }: CustomFieldWorkspaceProp
       {/* Header bar */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-xl font-bold text-white tracking-tight flex items-center gap-2">
-            <Sliders className="h-5 w-5 text-indigo-400" />
+          <h1 className="text-xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
+            <Sliders className="h-5 w-5 text-indigo-600" />
             <span>Lead Custom Fields</span>
             <Link
               href="/app/help?article=custom-fields"
-              className="text-slate-500 hover:text-indigo-400 transition ml-1"
+              className="text-slate-400 hover:text-indigo-600 transition ml-1"
               title="Custom Fields Help Guide"
             >
               <HelpCircle className="h-4 w-4" />
             </Link>
           </h1>
-          <p className="text-xs text-slate-400 mt-0.5">
+          <p className="text-xs text-slate-500 mt-0.5">
             Configure custom data attributes for your company&apos;s leads.
           </p>
         </div>
         <Button
           onClick={handleOpenCreate}
           size="sm"
-          className="bg-indigo-600 hover:bg-indigo-500 text-xs text-white"
+          className="bg-indigo-600 hover:bg-indigo-700 text-xs text-white shadow-xs"
         >
           <Plus className="h-3.5 w-3.5 mr-1" /> Add Custom Field
         </Button>
       </div>
 
       {/* Table */}
-      <div className="rounded-xl border border-slate-800 bg-slate-900/60 overflow-hidden shadow-xl backdrop-blur">
+      <div className="rounded-xl border border-slate-200 bg-white overflow-hidden shadow-xs">
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs text-slate-300">
-            <thead className="bg-slate-950/80 border-b border-slate-800 text-[11px] uppercase tracking-wider text-slate-400">
+          <table className="w-full text-left text-xs text-slate-700">
+            <thead className="bg-slate-50 border-b border-slate-200 text-[11px] uppercase tracking-wider text-slate-600">
               <tr>
                 <th className="py-3 px-4 font-semibold">Field Label & Key</th>
                 <th className="py-3 px-4 font-semibold">Type</th>
@@ -254,7 +254,7 @@ export function CustomFieldWorkspace({ initialFields }: CustomFieldWorkspaceProp
                 <th className="py-3 px-4 font-semibold text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800/60">
+            <tbody className="divide-y divide-slate-100">
               {fields.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="py-8 text-center text-slate-500">
@@ -266,46 +266,46 @@ export function CustomFieldWorkspace({ initialFields }: CustomFieldWorkspaceProp
                   const opts = Array.isArray(field.options) ? (field.options as string[]) : [];
 
                   return (
-                    <tr key={field.id} className="hover:bg-slate-800/30 transition">
+                    <tr key={field.id} className="hover:bg-slate-50 transition">
                       <td className="py-3 px-4">
-                        <div className="font-medium text-white">{field.label}</div>
-                        <div className="font-mono text-[10px] text-indigo-400/90">{field.key}</div>
+                        <div className="font-medium text-slate-900">{field.label}</div>
+                        <div className="font-mono text-[10px] text-indigo-600">{field.key}</div>
                       </td>
                       <td className="py-3 px-4">
                         <Badge
                           variant="outline"
-                          className="border-slate-700 bg-slate-800/80 text-slate-200 text-[10px] font-mono"
+                          className="border-slate-200 bg-slate-50 text-slate-700 text-[10px] font-mono"
                         >
                           {field.fieldType}
                         </Badge>
                       </td>
                       <td className="py-3 px-4">
                         {field.required ? (
-                          <span className="inline-flex items-center gap-1 text-amber-400 text-[11px] font-medium">
+                          <span className="inline-flex items-center gap-1 text-amber-700 text-[11px] font-medium">
                             <CheckCircle2 className="h-3 w-3" /> Yes
                           </span>
                         ) : (
-                          <span className="text-slate-500 text-[11px]">Optional</span>
+                          <span className="text-slate-400 text-[11px]">Optional</span>
                         )}
                       </td>
                       <td className="py-3 px-4">
                         {field.active ? (
-                          <span className="inline-flex items-center gap-1 text-emerald-400 text-[11px]">
-                            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" /> Active
+                          <span className="inline-flex items-center gap-1 text-emerald-700 text-[11px] font-medium">
+                            <span className="h-1.5 w-1.5 rounded-full bg-emerald-600" /> Active
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1 text-slate-500 text-[11px]">
-                            <span className="h-1.5 w-1.5 rounded-full bg-slate-500" /> Inactive
+                          <span className="inline-flex items-center gap-1 text-slate-400 text-[11px]">
+                            <span className="h-1.5 w-1.5 rounded-full bg-slate-400" /> Inactive
                           </span>
                         )}
                       </td>
-                      <td className="py-3 px-4 text-[11px] text-slate-400 max-w-xs truncate">
+                      <td className="py-3 px-4 text-[11px] text-slate-600 max-w-xs truncate">
                         {opts.length > 0 ? (
                           <span>{opts.join(", ")}</span>
                         ) : field.description ? (
                           <span>{field.description}</span>
                         ) : (
-                          <span className="text-slate-600 italic">—</span>
+                          <span className="text-slate-400 italic">—</span>
                         )}
                       </td>
                       <td className="py-3 px-4 text-right space-x-1">
@@ -313,7 +313,7 @@ export function CustomFieldWorkspace({ initialFields }: CustomFieldWorkspaceProp
                           variant="ghost"
                           size="sm"
                           onClick={() => handleOpenEdit(field)}
-                          className="h-7 w-7 p-0 text-slate-400 hover:text-indigo-400 hover:bg-indigo-500/10"
+                          className="h-7 w-7 p-0 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50"
                           title="Edit Custom Field"
                         >
                           <Edit2 className="h-3.5 w-3.5" />
@@ -322,7 +322,7 @@ export function CustomFieldWorkspace({ initialFields }: CustomFieldWorkspaceProp
                           variant="ghost"
                           size="sm"
                           onClick={() => handleDelete(field.id)}
-                          className="h-7 w-7 p-0 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10"
+                          className="h-7 w-7 p-0 text-slate-500 hover:text-rose-600 hover:bg-rose-50"
                           title="Delete Custom Field"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
@@ -339,37 +339,37 @@ export function CustomFieldWorkspace({ initialFields }: CustomFieldWorkspaceProp
 
       {/* Modal Dialog */}
       {isDialogOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-150">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
           <div
-            className="w-full max-w-lg rounded-xl border border-slate-800 bg-slate-900 p-6 shadow-2xl space-y-4 animate-in zoom-in-95 duration-150"
+            className="w-full max-w-lg rounded-xl border border-slate-200 bg-white p-6 shadow-2xl space-y-4 animate-in zoom-in-95 duration-150"
             role="dialog"
             aria-modal="true"
           >
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <h2 className="text-base font-semibold text-white">
+            <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+              <h2 className="text-base font-semibold text-slate-900">
                 {editingId ? "Edit Custom Field" : "Create Custom Field"}
               </h2>
               <button
                 type="button"
                 onClick={() => setIsDialogOpen(false)}
-                className="text-slate-400 hover:text-white text-xs"
+                className="text-slate-400 hover:text-slate-600 text-xs"
               >
                 ✕
               </button>
             </div>
 
             {error && (
-              <div className="flex items-center gap-2 p-2.5 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs">
-                <AlertCircle className="h-4 w-4 shrink-0" />
+              <div className="flex items-center gap-2 p-2.5 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-xs">
+                <AlertCircle className="h-4 w-4 shrink-0 text-rose-600" />
                 <span>{error}</span>
               </div>
             )}
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-1.5">
-                <Label className="text-xs text-slate-300">Field Label *</Label>
+                <Label className="text-xs font-medium text-slate-700">Field Label *</Label>
                 <Input
-                  className="h-9 text-xs"
+                  className="h-9 text-xs border-slate-300 text-slate-900 focus-visible:ring-indigo-600"
                   placeholder="e.g. Property Type, Budget, Patient Category"
                   value={label}
                   onChange={(e) => handleLabelChange(e.target.value)}
@@ -379,14 +379,14 @@ export function CustomFieldWorkspace({ initialFields }: CustomFieldWorkspaceProp
 
               {!editingId && (
                 <div className="space-y-1.5">
-                  <Label className="text-xs text-slate-300">
+                  <Label className="text-xs font-medium text-slate-700">
                     Field Key *{" "}
                     <span className="text-[10px] text-slate-500">
                       (snake_case, unique within entity)
                     </span>
                   </Label>
                   <Input
-                    className="h-9 text-xs font-mono"
+                    className="h-9 text-xs font-mono border-slate-300 text-slate-900 focus-visible:ring-indigo-600"
                     placeholder="e.g. property_type"
                     value={key}
                     onChange={(e) => setKey(e.target.value)}
@@ -396,9 +396,9 @@ export function CustomFieldWorkspace({ initialFields }: CustomFieldWorkspaceProp
               )}
 
               <div className="space-y-1.5">
-                <Label className="text-xs text-slate-300">Description (Optional)</Label>
+                <Label className="text-xs font-medium text-slate-700">Description (Optional)</Label>
                 <Input
-                  className="h-9 text-xs"
+                  className="h-9 text-xs border-slate-300 text-slate-900 focus-visible:ring-indigo-600"
                   placeholder="Help text for CRM users"
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
@@ -407,11 +407,11 @@ export function CustomFieldWorkspace({ initialFields }: CustomFieldWorkspaceProp
 
               {!editingId && (
                 <div className="space-y-1.5">
-                  <Label className="text-xs text-slate-300">Field Type</Label>
+                  <Label className="text-xs font-medium text-slate-700">Field Type</Label>
                   <select
                     value={fieldType}
                     onChange={(e) => setFieldType(e.target.value)}
-                    className="w-full h-9 rounded-lg border border-slate-800 bg-slate-950 px-2.5 text-xs text-slate-200 outline-none focus:border-indigo-500"
+                    className="w-full h-9 rounded-lg border border-slate-300 bg-white px-2.5 text-xs text-slate-900 outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600"
                   >
                     {FIELD_TYPES.map((t) => (
                       <option key={t.value} value={t.value}>
@@ -424,14 +424,14 @@ export function CustomFieldWorkspace({ initialFields }: CustomFieldWorkspaceProp
 
               {(fieldType === "SELECT" || fieldType === "MULTI_SELECT") && (
                 <div className="space-y-1.5">
-                  <Label className="text-xs text-slate-300">
+                  <Label className="text-xs font-medium text-slate-700">
                     Dropdown Options *{" "}
                     <span className="text-[10px] text-slate-500">
                       (comma- or newline-separated)
                     </span>
                   </Label>
                   <textarea
-                    className="w-full min-h-[70px] rounded-lg border border-slate-800 bg-slate-950 p-2.5 text-xs text-slate-200 outline-none focus:border-indigo-500"
+                    className="w-full min-h-[70px] rounded-lg border border-slate-300 bg-white p-2.5 text-xs text-slate-900 outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600"
                     placeholder="Residential, Commercial, Industrial"
                     value={optionsText}
                     onChange={(e) => setOptionsText(e.target.value)}
@@ -441,34 +441,34 @@ export function CustomFieldWorkspace({ initialFields }: CustomFieldWorkspaceProp
               )}
 
               <div className="flex items-center gap-6 pt-1">
-                <label className="flex items-center gap-2 text-xs text-slate-300 cursor-pointer">
+                <label className="flex items-center gap-2 text-xs text-slate-700 cursor-pointer">
                   <input
                     type="checkbox"
                     checked={required}
                     onChange={(e) => setRequired(e.target.checked)}
-                    className="h-4 w-4 rounded border-gray-700 bg-slate-950 text-indigo-600 focus:ring-indigo-500"
+                    className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-600"
                   />
                   <span>Required on Lead creation</span>
                 </label>
 
-                <label className="flex items-center gap-2 text-xs text-slate-300 cursor-pointer">
+                <label className="flex items-center gap-2 text-xs text-slate-700 cursor-pointer">
                   <input
                     type="checkbox"
                     checked={active}
                     onChange={(e) => setActive(e.target.checked)}
-                    className="h-4 w-4 rounded border-gray-700 bg-slate-950 text-indigo-600 focus:ring-indigo-500"
+                    className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-600"
                   />
                   <span>Active</span>
                 </label>
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-4 border-t border-slate-800">
+              <div className="flex items-center justify-end gap-2 pt-4 border-t border-slate-200">
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
                   onClick={() => setIsDialogOpen(false)}
-                  className="border-slate-800 text-xs text-slate-400 hover:text-white"
+                  className="border-slate-300 text-xs text-slate-700 hover:bg-slate-50"
                 >
                   Cancel
                 </Button>
@@ -476,7 +476,7 @@ export function CustomFieldWorkspace({ initialFields }: CustomFieldWorkspaceProp
                   type="submit"
                   disabled={isSaving}
                   size="sm"
-                  className="bg-indigo-600 hover:bg-indigo-500 text-xs text-white"
+                  className="bg-indigo-600 hover:bg-indigo-700 text-xs text-white shadow-xs"
                 >
                   {isSaving ? (
                     <>

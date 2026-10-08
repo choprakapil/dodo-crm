@@ -65,14 +65,14 @@ async function runPhaseLockChecks() {
     ];
 
     for (const table of forbiddenTables) {
-      const result: Array<{ exists: boolean }> = await prisma.$queryRawUnsafe(`
-        SELECT EXISTS (
-          SELECT FROM information_schema.tables
-          WHERE table_schema = 'public'
-          AND table_name = '${table}'
-        );
+      const result: Array<{ exists: any }> = await prisma.$queryRawUnsafe(`
+        SELECT COUNT(*) > 0 as \`exists\`
+        FROM information_schema.tables
+        WHERE (table_schema = DATABASE() OR table_schema = 'public')
+        AND table_name = '${table}'
       `);
-      if (result[0]?.exists) {
+      const isPresent = Boolean(Number(result[0]?.exists));
+      if (isPresent) {
         console.error(`❌ VIOLATION: Forbidden Phase 8 table '${table}' exists in database!`);
         failed = true;
       } else {

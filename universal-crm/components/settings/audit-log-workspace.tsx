@@ -177,7 +177,7 @@ export function AuditLogWorkspace() {
         <div className="flex items-center gap-2">
           <ShieldAlert className="h-4 w-4 text-primary" />
           <span>
-            Universal CRM Audit Trail: Immutable, tenant-isolated ledger for compliance and operational transparency.
+            DODO CRM Audit Trail: Immutable, tenant-isolated ledger for compliance and operational transparency.
           </span>
         </div>
         <span>Total Records: {totalCount}</span>

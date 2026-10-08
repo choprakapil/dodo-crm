@@ -20,10 +20,10 @@ interface LeadCustomFieldsCardProps {
 export function LeadCustomFieldsCard({ customFieldValues = [] }: LeadCustomFieldsCardProps) {
   if (!customFieldValues || customFieldValues.length === 0) {
     return (
-      <Card className="border-slate-800 bg-slate-900/60 backdrop-blur">
+      <Card className="border-slate-200/90 bg-white shadow-2xs">
         <CardHeader className="pb-3">
-          <CardTitle className="text-xs font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-2">
-            <Sliders className="h-4 w-4 text-violet-400" /> Custom Fields
+          <CardTitle className="text-xs font-semibold text-slate-800 uppercase tracking-wider flex items-center gap-2">
+            <Sliders className="h-4 w-4 text-violet-600" /> Custom Fields
           </CardTitle>
         </CardHeader>
         <CardContent className="text-xs text-slate-500 py-3 text-center">
@@ -35,30 +35,30 @@ export function LeadCustomFieldsCard({ customFieldValues = [] }: LeadCustomField
 
   const renderFormattedValue = (type: string, val: unknown) => {
     if (val === null || val === undefined || val === "") {
-      return <span className="text-slate-500 italic">None</span>;
+      return <span className="text-slate-400 italic">None</span>;
     }
 
     switch (type) {
       case "BOOLEAN":
         return Boolean(val) ? (
-          <span className="inline-flex items-center gap-1 text-emerald-400 font-medium">
-            <CheckCircle2 className="h-3 w-3" /> Yes
+          <span className="inline-flex items-center gap-1 text-emerald-700 font-semibold">
+            <CheckCircle2 className="h-3 w-3 text-emerald-600" /> Yes
           </span>
         ) : (
-          <span className="inline-flex items-center gap-1 text-slate-400">
+          <span className="inline-flex items-center gap-1 text-slate-500">
             <XCircle className="h-3 w-3" /> No
           </span>
         );
 
       case "NUMBER":
-        return <span className="font-mono text-slate-200">{Number(val).toLocaleString()}</span>;
+        return <span className="font-mono text-slate-900 font-medium">{Number(val).toLocaleString()}</span>;
 
       case "DATE":
       case "DATETIME":
         try {
           const d = new Date(val as string);
           return (
-            <span className="inline-flex items-center gap-1 text-slate-200 font-mono text-[11px]">
+            <span className="inline-flex items-center gap-1 text-slate-800 font-mono text-[11px]">
               <Calendar className="h-3 w-3 text-slate-400" />
               {d.toLocaleDateString()}
             </span>
@@ -74,7 +74,7 @@ export function LeadCustomFieldsCard({ customFieldValues = [] }: LeadCustomField
             href={urlStr}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 text-indigo-400 hover:underline truncate max-w-[160px]"
+            className="inline-flex items-center gap-1 text-indigo-600 hover:underline truncate max-w-[160px] font-medium"
           >
             <span>{urlStr.replace(/^https?:\/\//, "")}</span>
             <ExternalLink className="h-3 w-3 shrink-0" />
@@ -87,7 +87,7 @@ export function LeadCustomFieldsCard({ customFieldValues = [] }: LeadCustomField
         return (
           <a
             href={`mailto:${emailStr}`}
-            className="inline-flex items-center gap-1 text-indigo-400 hover:underline truncate max-w-[160px]"
+            className="inline-flex items-center gap-1 text-indigo-600 hover:underline truncate max-w-[160px] font-medium"
           >
             <Mail className="h-3 w-3 shrink-0" />
             <span>{emailStr}</span>
@@ -100,7 +100,7 @@ export function LeadCustomFieldsCard({ customFieldValues = [] }: LeadCustomField
         return (
           <a
             href={`tel:${phoneStr}`}
-            className="inline-flex items-center gap-1 text-indigo-400 hover:underline"
+            className="inline-flex items-center gap-1 text-indigo-600 hover:underline font-medium"
           >
             <Phone className="h-3 w-3 shrink-0" />
             <span>{phoneStr}</span>
@@ -115,7 +115,7 @@ export function LeadCustomFieldsCard({ customFieldValues = [] }: LeadCustomField
             {items.map((item, idx) => (
               <span
                 key={idx}
-                className="px-1.5 py-0.5 rounded-full bg-violet-500/10 border border-violet-500/30 text-[10px] text-violet-300 font-medium"
+                className="px-1.5 py-0.5 rounded-full bg-violet-50 border border-violet-200 text-[10px] text-violet-700 font-medium"
               >
                 {String(item)}
               </span>
@@ -126,30 +126,30 @@ export function LeadCustomFieldsCard({ customFieldValues = [] }: LeadCustomField
 
       case "SELECT":
         return (
-          <span className="px-2 py-0.5 rounded-md bg-slate-800 text-slate-200 font-medium text-[11px]">
+          <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-800 font-medium text-[11px]">
             {String(val)}
           </span>
         );
 
       default:
-        return <span className="text-slate-200 break-words max-w-[180px] text-right">{String(val)}</span>;
+        return <span className="text-slate-800 break-words max-w-[180px] text-right font-medium">{String(val)}</span>;
     }
   };
 
   return (
-    <Card className="border-slate-800 bg-slate-900/60 backdrop-blur">
+    <Card className="border-slate-200/90 bg-white shadow-2xs">
       <CardHeader className="pb-3">
-        <CardTitle className="text-xs font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-2">
-          <Sliders className="h-4 w-4 text-violet-400" /> Custom Fields
+        <CardTitle className="text-xs font-semibold text-slate-800 uppercase tracking-wider flex items-center gap-2">
+          <Sliders className="h-4 w-4 text-violet-600" /> Custom Fields
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3 text-xs">
         {customFieldValues.map((cfv) => (
           <div
             key={cfv.id}
-            className="flex items-start justify-between py-1 border-b border-slate-800/60 last:border-0 gap-2"
+            className="flex items-start justify-between py-1 border-b border-slate-100 last:border-0 gap-2"
           >
-            <span className="text-slate-400 shrink-0">{cfv.customField.label}:</span>
+            <span className="text-slate-500 shrink-0">{cfv.customField.label}:</span>
             <div className="text-right">
               {renderFormattedValue(cfv.customField.fieldType, cfv.value)}
             </div>

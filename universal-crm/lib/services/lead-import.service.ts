@@ -8,7 +8,7 @@
 
 import { prisma } from "@/lib/db";
 import { AuthContext } from "@/lib/auth/session";
-import { parseCsv, detectColumnMappings } from "@/lib/utils/csv";
+import { parseCsv, detectIntelligentHeaders } from "@/lib/utils/csv";
 import {
   LeadImportExecuteInput,
   leadImportPreviewSchema,
@@ -69,7 +69,7 @@ export class LeadImportService {
       orderBy: { sortOrder: "asc" },
     });
 
-    const suggestedMappings = detectColumnMappings(headers, customFields);
+    const detectionSummary = detectIntelligentHeaders(headers, customFields);
 
     const sampleRows = rows.slice(0, 5);
 
@@ -96,7 +96,16 @@ export class LeadImportService {
       filename,
       totalRows: rows.length,
       detectedHeaders: headers,
-      suggestedMappings,
+      suggestedMappings: detectionSummary.suggestedMappings,
+      headerDetections: detectionSummary.detections,
+      conflicts: detectionSummary.conflicts,
+      hasConflicts: detectionSummary.hasConflicts,
+      detectionStats: {
+        highConfidenceCount: detectionSummary.highConfidenceCount,
+        reviewCount: detectionSummary.reviewCount,
+        unmappedCount: detectionSummary.unmappedCount,
+        conflictCount: detectionSummary.conflictCount,
+      },
       sampleRows,
       availableFields,
     };
@@ -152,6 +161,43 @@ export class LeadImportService {
       }),
     ]);
 
+    const customFieldByKey = new Map(customFields.map((cf) => [cf.key, cf]));
+    const customFieldByPrefixedKey = new Map(customFields.map((cf) => [`cf_${cf.key}`, cf]));
+
+    // 2b. Validate destination field mappings & reject duplicates / invalid / cross-tenant custom fields
+    const validCoreKeys = new Set([
+      "name",
+      "email",
+      "phone",
+      "company",
+      "amount",
+      "priority",
+      "status",
+      "source",
+      "assignedUser",
+      "team",
+    ]);
+
+    const targetFieldCounts = new Map<string, number>();
+    for (const [csvCol, crmKey] of Object.entries(input.columnMappings)) {
+      if (!crmKey) continue;
+
+      const count = targetFieldCounts.get(crmKey) || 0;
+      if (count > 0) {
+        throw new ValidationError(`Duplicate destination field mapping: multiple columns mapped to '${crmKey}'`);
+      }
+      targetFieldCounts.set(crmKey, count + 1);
+
+      if (crmKey.startsWith("cf_")) {
+        const cfKey = crmKey.replace(/^cf_/, "");
+        if (!customFieldByKey.has(cfKey)) {
+          throw new ValidationError(`Custom field '${cfKey}' does not exist or belong to this tenant`);
+        }
+      } else if (!validCoreKeys.has(crmKey)) {
+        throw new ValidationError(`Invalid CRM destination field '${crmKey}'`);
+      }
+    }
+
     const defaultStatus = statuses.find((s) => s.isDefault) ?? statuses[0];
 
     const statusMap = new Map<string, string>();
@@ -178,9 +224,6 @@ export class LeadImportService {
       teamMap.set(t.name.toLowerCase().trim(), t.id);
       teamMap.set(t.id, t.id);
     }
-
-    const customFieldByKey = new Map(customFields.map((cf) => [cf.key, cf]));
-    const customFieldByPrefixedKey = new Map(customFields.map((cf) => [`cf_${cf.key}`, cf]));
 
     // Invert column mappings: crmFieldKey -> csvHeader
     const mappingEntries = Object.entries(input.columnMappings);

@@ -20,6 +20,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { DispositionDialog, DispositionData } from "./disposition-dialog";
+import { DispositionHierarchyModal } from "./disposition-hierarchy-modal";
+import { toast } from "sonner";
 
 export function DispositionsWorkspace() {
   const [dispositions, setDispositions] = useState<DispositionData[]>([]);
@@ -30,6 +32,11 @@ export function DispositionsWorkspace() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedDisposition, setSelectedDisposition] = useState<DispositionData | null>(null);
   const [actionInProgressId, setActionInProgressId] = useState<string | null>(null);
+
+  // Hierarchy management modal state
+  const [hierarchyModalOpen, setHierarchyModalOpen] = useState(false);
+  const [hierarchyModalDisposition, setHierarchyModalDisposition] = useState<DispositionData | null>(null);
+  const [hierarchyModalAction, setHierarchyModalAction] = useState<"delete" | "deactivate" | "manage">("manage");
 
   const fetchDispositions = useCallback(async () => {
     setLoading(true);
@@ -64,29 +71,16 @@ export function DispositionsWorkspace() {
     setDialogOpen(true);
   };
 
-  const handleDelete = async (id: string, name: string) => {
-    if (!confirm(`Are you sure you want to delete disposition "${name}"?`)) {
-      return;
-    }
-
-    setActionInProgressId(id);
-    try {
-      const res = await fetch(`/api/v1/dispositions/${id}`, {
-        method: "DELETE",
-      });
-      const json = await res.json();
-
-      if (!res.ok || !json.success) {
-        throw new Error(json.error?.message || "Failed to delete disposition");
-      }
-
-      await fetchDispositions();
-    } catch (err) {
-      alert(err instanceof Error ? err.message : "Deletion failed");
-    } finally {
-      setActionInProgressId(null);
-    }
+  const handleOpenHierarchy = (disp: DispositionData, action: "delete" | "deactivate" | "manage") => {
+    setHierarchyModalDisposition(disp);
+    setHierarchyModalAction(action);
+    setHierarchyModalOpen(true);
   };
+
+  const handleDelete = (disp: DispositionData) => {
+    handleOpenHierarchy(disp, "delete");
+  };
+
 
   const filteredDispositions = dispositions.filter((d) => {
     if (!search.trim()) return true;
@@ -170,6 +164,8 @@ export function DispositionsWorkspace() {
               </thead>
               <tbody className="divide-y">
                 {filteredDispositions.map((disp) => {
+                  const directChildrenCount = dispositions.filter((d) => d.parentId === disp.id).length;
+
                   return (
                     <tr key={disp.id} className="hover:bg-muted/30 transition-colors">
                       <td className="py-3 px-4">
@@ -190,6 +186,16 @@ export function DispositionsWorkspace() {
                               {disp.depth > 0 && (
                                 <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
                                   Level {disp.depth}
+                                </Badge>
+                              )}
+                              {directChildrenCount > 0 && (
+                                <Badge
+                                  variant="outline"
+                                  onClick={() => handleOpenHierarchy(disp, "manage")}
+                                  className="text-[10px] text-indigo-600 border-indigo-200 bg-indigo-50/50 cursor-pointer hover:bg-indigo-100/60 transition-colors gap-1"
+                                >
+                                  <GitFork className="h-2.5 w-2.5" />
+                                  {directChildrenCount} child outcome{directChildrenCount > 1 ? "s" : ""}
                                 </Badge>
                               )}
                             </div>
@@ -252,6 +258,17 @@ export function DispositionsWorkspace() {
 
                       <td className="py-3 px-4 text-right">
                         <div className="flex items-center justify-end gap-1">
+                          {directChildrenCount > 0 && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleOpenHierarchy(disp, "manage")}
+                              className="h-8 w-8 p-0 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50"
+                              title="Manage Child Hierarchy"
+                            >
+                              <GitFork className="h-4 w-4" />
+                            </Button>
+                          )}
                           <Button
                             variant="ghost"
                             size="sm"
@@ -264,7 +281,7 @@ export function DispositionsWorkspace() {
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => handleDelete(disp.id, disp.name)}
+                            onClick={() => handleDelete(disp)}
                             disabled={actionInProgressId === disp.id}
                             className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
                             title="Delete Disposition"
@@ -286,7 +303,7 @@ export function DispositionsWorkspace() {
         </div>
       )}
 
-      {/* Dialog */}
+      {/* Edit / Create Dialog */}
       <DispositionDialog
         open={dialogOpen}
         onOpenChange={setDialogOpen}
@@ -294,6 +311,17 @@ export function DispositionsWorkspace() {
         allDispositions={dispositions}
         onSaved={fetchDispositions}
       />
+
+      {/* Hierarchy Protection & Child Reassignment Modal */}
+      <DispositionHierarchyModal
+        open={hierarchyModalOpen}
+        onOpenChange={setHierarchyModalOpen}
+        disposition={hierarchyModalDisposition}
+        allDispositions={dispositions}
+        actionType={hierarchyModalAction}
+        onHierarchyUpdated={fetchDispositions}
+      />
     </div>
   );
 }
+

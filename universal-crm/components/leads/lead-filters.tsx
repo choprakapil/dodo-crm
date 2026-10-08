@@ -25,8 +25,6 @@ export function LeadFilters({ statuses, sources }: FilterProps) {
 
   function applyFilters(updates: Record<string, string | null>) {
     const params = new URLSearchParams(searchParams.toString());
-    
-    // Always reset page to 1 when changing filters
     params.set("page", "1");
 
     for (const [key, value] of Object.entries(updates)) {
@@ -59,33 +57,32 @@ export function LeadFilters({ statuses, sources }: FilterProps) {
   );
 
   return (
-    <div className="bg-slate-900/60 border border-slate-800 rounded-xl p-4 space-y-3 backdrop-blur">
-      <div className="flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
-        {/* Search input form */}
+    <div className="bg-white border border-slate-200/90 rounded-xl p-3 space-y-2.5 shadow-2xs">
+      <div className="flex flex-col md:flex-row gap-2.5 items-stretch md:items-center justify-between">
+        {/* Search input */}
         <form onSubmit={handleSearchSubmit} className="flex-1 flex gap-2">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
             <Input
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Search leads by name, email, phone, company..."
-              className="pl-9 bg-slate-950/60 border-slate-800 text-slate-100 placeholder:text-slate-500 h-9 text-xs focus-visible:ring-indigo-500"
+              className="pl-8 bg-white border-slate-200 text-slate-900 placeholder:text-slate-400 h-8 text-xs focus-visible:ring-1 focus-visible:ring-indigo-500 shadow-2xs"
             />
           </div>
           <Button
             type="submit"
             disabled={isPending}
-            variant="secondary"
-            className="h-9 px-4 text-xs bg-indigo-600/20 text-indigo-300 border border-indigo-500/30 hover:bg-indigo-600/30"
+            className="h-8 px-3.5 text-xs bg-indigo-600 hover:bg-indigo-700 text-white font-medium border-transparent shadow-2xs"
           >
             Search
           </Button>
         </form>
 
-        {/* Filter dropdowns */}
+        {/* Filter controls */}
         <div className="flex flex-wrap items-center gap-2">
-          <div className="flex items-center gap-1.5 text-xs text-slate-400 mr-1">
-            <Filter className="h-3.5 w-3.5" />
+          <div className="flex items-center gap-1 text-[11px] text-slate-500 mr-0.5">
+            <Filter className="h-3 w-3 text-indigo-600" />
             <span>Filters:</span>
           </div>
 
@@ -93,7 +90,7 @@ export function LeadFilters({ statuses, sources }: FilterProps) {
           <select
             value={currentStatus}
             onChange={(e) => applyFilters({ statusId: e.target.value || null })}
-            className="h-9 rounded-lg border border-slate-800 bg-slate-950/80 px-2.5 text-xs text-slate-200 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+            className="h-8 rounded-lg border border-slate-200 bg-white px-2 text-xs text-slate-700 outline-hidden focus:border-indigo-500 shadow-2xs"
           >
             <option value="">All Statuses</option>
             {statuses.map((s) => (
@@ -103,11 +100,24 @@ export function LeadFilters({ statuses, sources }: FilterProps) {
             ))}
           </select>
 
+          {/* Priority filter */}
+          <select
+            value={currentPriority}
+            onChange={(e) => applyFilters({ priority: e.target.value || null })}
+            className="h-8 rounded-lg border border-slate-200 bg-white px-2 text-xs text-slate-700 outline-hidden focus:border-indigo-500 shadow-2xs"
+          >
+            <option value="">All Priorities</option>
+            <option value="URGENT">Urgent</option>
+            <option value="HIGH">High</option>
+            <option value="MEDIUM">Medium</option>
+            <option value="LOW">Low</option>
+          </select>
+
           {/* Source filter */}
           <select
             value={currentSource}
             onChange={(e) => applyFilters({ sourceId: e.target.value || null })}
-            className="h-9 rounded-lg border border-slate-800 bg-slate-950/80 px-2.5 text-xs text-slate-200 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+            className="h-8 rounded-lg border border-slate-200 bg-white px-2 text-xs text-slate-700 outline-hidden focus:border-indigo-500 shadow-2xs"
           >
             <option value="">All Sources</option>
             {sources.map((src) => (
@@ -117,28 +127,16 @@ export function LeadFilters({ statuses, sources }: FilterProps) {
             ))}
           </select>
 
-          {/* Priority filter */}
-          <select
-            value={currentPriority}
-            onChange={(e) => applyFilters({ priority: e.target.value || null })}
-            className="h-9 rounded-lg border border-slate-800 bg-slate-950/80 px-2.5 text-xs text-slate-200 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
-          >
-            <option value="">All Priorities</option>
-            <option value="URGENT">Urgent</option>
-            <option value="HIGH">High</option>
-            <option value="MEDIUM">Medium</option>
-            <option value="LOW">Low</option>
-          </select>
-
-          {/* Clear button */}
+          {/* Reset filter button */}
           {hasActiveFilters && (
             <Button
-              onClick={handleReset}
+              type="button"
               variant="ghost"
               size="sm"
-              className="h-9 px-2 text-xs text-slate-400 hover:text-rose-400 hover:bg-rose-500/10"
+              onClick={handleReset}
+              className="h-8 px-2 text-xs text-slate-500 hover:text-slate-900 hover:bg-slate-100"
             >
-              <X className="h-3.5 w-3.5 mr-1" />
+              <X className="h-3 w-3 mr-1" />
               Reset
             </Button>
           )}

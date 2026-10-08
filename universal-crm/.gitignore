@@ -41,5 +41,10 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# database backups (pg_dump files — never commit)
+# database backups (never commit)
 /backups/
+
+# local uploads & runtime logs
+/uploads/
+/logs/
+*.log

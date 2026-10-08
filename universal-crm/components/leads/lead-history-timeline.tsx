@@ -59,7 +59,9 @@ export function LeadHistoryTimeline({
   assignmentHistories,
   activities,
 }: LeadHistoryTimelineProps) {
-  const [activeTab, setActiveTab] = useState<"all" | "interactions" | "status" | "assignment">("all");
+  const [activeTab, setActiveTab] = useState<
+    "all" | "calls" | "notes" | "followups" | "status" | "assignment"
+  >("all");
 
   function formatDate(d: string | Date) {
     const date = typeof d === "string" ? new Date(d) : d;
@@ -170,69 +172,110 @@ export function LeadHistoryTimeline({
     }
   }
 
-  const interactionTypes = new Set(["CALL", "WHATSAPP", "EMAIL", "NOTE", "NOTE_ADDED", "MEETING"]);
-  const filteredActivities =
-    activeTab === "interactions"
-      ? activities.filter((act) => interactionTypes.has(act.type))
-      : activities;
+  const callsCount = activities.filter((a) => a.type === "CALL").length;
+  const notesCount = activities.filter((a) => a.type === "NOTE" || a.type === "NOTE_ADDED").length;
+  const followupsCount = activities.filter((a) =>
+    ["TASK_CREATED", "TASK_COMPLETED", "TASK_RESCHEDULED", "FOLLOW_UP_SCHEDULED"].includes(a.type)
+  ).length;
+
+  const filteredActivities = activities.filter((act) => {
+    if (activeTab === "all") return true;
+    if (activeTab === "calls") return act.type === "CALL";
+    if (activeTab === "notes") return act.type === "NOTE" || act.type === "NOTE_ADDED";
+    if (activeTab === "followups") {
+      return ["TASK_CREATED", "TASK_COMPLETED", "TASK_RESCHEDULED", "FOLLOW_UP_SCHEDULED"].includes(
+        act.type
+      );
+    }
+    return false;
+  });
 
   return (
     <div className="space-y-4">
-      {/* Tabs */}
-      <div className="flex flex-wrap items-center gap-1 border-b border-slate-800 pb-2">
+      {/* Category Filter Chips */}
+      <div className="flex flex-wrap items-center gap-1.5 border-b border-slate-200 pb-2.5">
         <button
           type="button"
           onClick={() => setActiveTab("all")}
-          className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${
+          className={`px-2.5 py-1 rounded-lg text-xs font-medium transition ${
             activeTab === "all"
-              ? "bg-indigo-600/15 text-indigo-400 border border-indigo-500/30"
-              : "text-slate-400 hover:text-slate-200"
+              ? "bg-indigo-50 text-indigo-700 border border-indigo-200 shadow-2xs font-semibold"
+              : "text-slate-500 hover:text-slate-900 hover:bg-slate-100"
           }`}
         >
-          All Timeline ({activities.length})
+          All ({activities.length})
         </button>
         <button
           type="button"
-          onClick={() => setActiveTab("interactions")}
-          className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${
-            activeTab === "interactions"
-              ? "bg-indigo-600/15 text-indigo-400 border border-indigo-500/30"
-              : "text-slate-400 hover:text-slate-200"
+          onClick={() => setActiveTab("calls")}
+          className={`px-2.5 py-1 rounded-lg text-xs font-medium transition ${
+            activeTab === "calls"
+              ? "bg-indigo-50 text-indigo-700 border border-indigo-200 shadow-2xs font-semibold"
+              : "text-slate-500 hover:text-slate-900 hover:bg-slate-100"
           }`}
         >
-          Interactions ({activities.filter((a) => interactionTypes.has(a.type)).length})
+          Calls ({callsCount})
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab("notes")}
+          className={`px-2.5 py-1 rounded-lg text-xs font-medium transition ${
+            activeTab === "notes"
+              ? "bg-indigo-50 text-indigo-700 border border-indigo-200 shadow-2xs font-semibold"
+              : "text-slate-500 hover:text-slate-900 hover:bg-slate-100"
+          }`}
+        >
+          Notes ({notesCount})
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab("followups")}
+          className={`px-2.5 py-1 rounded-lg text-xs font-medium transition ${
+            activeTab === "followups"
+              ? "bg-indigo-50 text-indigo-700 border border-indigo-200 shadow-2xs font-semibold"
+              : "text-slate-500 hover:text-slate-900 hover:bg-slate-100"
+          }`}
+        >
+          Follow-ups ({followupsCount})
         </button>
         <button
           type="button"
           onClick={() => setActiveTab("status")}
-          className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${
+          className={`px-2.5 py-1 rounded-lg text-xs font-medium transition ${
             activeTab === "status"
-              ? "bg-indigo-600/15 text-indigo-400 border border-indigo-500/30"
-              : "text-slate-400 hover:text-slate-200"
+              ? "bg-indigo-50 text-indigo-700 border border-indigo-200 shadow-2xs font-semibold"
+              : "text-slate-500 hover:text-slate-900 hover:bg-slate-100"
           }`}
         >
-          Status History ({statusHistories.length})
+          Status ({statusHistories.length})
         </button>
         <button
           type="button"
           onClick={() => setActiveTab("assignment")}
-          className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${
+          className={`px-2.5 py-1 rounded-lg text-xs font-medium transition ${
             activeTab === "assignment"
-              ? "bg-indigo-600/15 text-indigo-400 border border-indigo-500/30"
-              : "text-slate-400 hover:text-slate-200"
+              ? "bg-indigo-50 text-indigo-700 border border-indigo-200 shadow-2xs font-semibold"
+              : "text-slate-500 hover:text-slate-900 hover:bg-slate-100"
           }`}
         >
-          Assignment History ({assignmentHistories.length})
+          Assignment ({assignmentHistories.length})
         </button>
       </div>
 
       {/* Content based on tab */}
-      {(activeTab === "all" || activeTab === "interactions") && (
+      {(activeTab === "all" ||
+        activeTab === "calls" ||
+        activeTab === "notes" ||
+        activeTab === "followups") && (
         <div className="space-y-3">
           {filteredActivities.length === 0 ? (
             <p className="text-xs text-slate-500 italic py-6 text-center">
-              {activeTab === "interactions"
-                ? "No interactions (calls, emails, WhatsApp, notes, meetings) logged yet."
+              {activeTab === "calls"
+                ? "No call outcomes logged yet."
+                : activeTab === "notes"
+                ? "No notes added yet."
+                : activeTab === "followups"
+                ? "No scheduled follow-up tasks recorded yet."
                 : "No activities recorded yet."}
             </p>
           ) : (
@@ -242,25 +285,25 @@ export function LeadHistoryTimeline({
               return (
                 <div
                   key={act.id}
-                  className="flex items-start space-x-3 p-3.5 rounded-lg border border-slate-800 bg-slate-950/40 text-xs transition hover:border-slate-700/80"
+                  className="flex items-start space-x-3 p-3.5 rounded-xl border border-slate-200/90 bg-white text-xs transition hover:border-slate-300 shadow-2xs"
                 >
                   <div
-                    className={`h-8 w-8 rounded-lg ${visual.bg} border flex items-center justify-center ${visual.color} shrink-0 mt-0.5 shadow-sm`}
+                    className={`h-7 w-7 rounded-lg ${visual.bg} border flex items-center justify-center ${visual.color} shrink-0 mt-0.5`}
                   >
-                    <Icon className="h-4 w-4" />
+                    <Icon className="h-3.5 w-3.5" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between gap-2">
-                      <span className="font-semibold text-slate-200">{visual.label}</span>
-                      <span className="text-[10px] text-slate-500 font-mono shrink-0">
+                      <span className="font-semibold text-slate-900">{visual.label}</span>
+                      <span className="text-[10px] text-slate-400 font-mono shrink-0">
                         {formatDate(act.createdAt)}
                       </span>
                     </div>
-                    <p className="text-slate-300 mt-1 whitespace-pre-line leading-relaxed">
+                    <p className="text-slate-700 mt-1 whitespace-pre-line leading-relaxed text-[11px]">
                       {act.description}
                     </p>
                     {act.user && (
-                      <div className="flex items-center gap-1.5 mt-2 text-[10px] text-slate-500">
+                      <div className="flex items-center gap-1.5 mt-2 text-[10px] text-slate-400">
                         <User className="h-3 w-3" />
                         <span>Logged by {act.user.name}</span>
                       </div>
@@ -274,14 +317,14 @@ export function LeadHistoryTimeline({
       )}
 
       {activeTab === "status" && (
-        <div className="space-y-3">
+        <div className="space-y-2.5">
           {statusHistories.length === 0 ? (
             <p className="text-xs text-slate-500 italic py-6 text-center">No status changes recorded.</p>
           ) : (
             statusHistories.map((h) => (
               <div
                 key={h.id}
-                className="p-3.5 rounded-lg border border-slate-800 bg-slate-950/40 text-xs space-y-2"
+                className="p-3.5 rounded-xl border border-slate-200/90 bg-white text-xs space-y-1.5 shadow-2xs"
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-2">
@@ -293,14 +336,14 @@ export function LeadHistoryTimeline({
                           color: h.fromStatus.color,
                           backgroundColor: `${h.fromStatus.color}10`,
                         }}
-                        className="text-[11px]"
+                        className="text-[10px] font-mono"
                       >
                         {h.fromStatus.name}
                       </Badge>
                     ) : (
-                      <span className="text-slate-500 italic text-[11px]">Initial</span>
+                      <span className="text-slate-400 italic text-[10px]">Initial</span>
                     )}
-                    <ArrowRight className="h-3 w-3 text-slate-500" />
+                    <ArrowRight className="h-3 w-3 text-slate-400" />
                     {h.toStatus ? (
                       <Badge
                         variant="outline"
@@ -309,21 +352,21 @@ export function LeadHistoryTimeline({
                           color: h.toStatus.color,
                           backgroundColor: `${h.toStatus.color}10`,
                         }}
-                        className="text-[11px] font-medium"
+                        className="text-[10px] font-mono"
                       >
                         {h.toStatus.name}
                       </Badge>
                     ) : (
-                      <span className="text-slate-500 italic text-[11px]">None</span>
+                      <span className="text-slate-400 italic text-[10px]">None</span>
                     )}
                   </div>
-                  <span className="text-[10px] text-slate-500 font-mono">
+                  <span className="text-[10px] text-slate-400 font-mono">
                     {formatDate(h.changedAt)}
                   </span>
                 </div>
                 {h.changedBy && (
-                  <div className="flex items-center space-x-1.5 text-[11px] text-slate-400">
-                    <User className="h-3 w-3 text-slate-500" />
+                  <div className="text-[10px] text-slate-400 flex items-center gap-1">
+                    <User className="h-3 w-3" />
                     <span>Changed by {h.changedBy.name}</span>
                   </div>
                 )}
@@ -334,32 +377,32 @@ export function LeadHistoryTimeline({
       )}
 
       {activeTab === "assignment" && (
-        <div className="space-y-3">
+        <div className="space-y-2.5">
           {assignmentHistories.length === 0 ? (
             <p className="text-xs text-slate-500 italic py-6 text-center">No assignment changes recorded.</p>
           ) : (
             assignmentHistories.map((h) => (
               <div
                 key={h.id}
-                className="p-3.5 rounded-lg border border-slate-800 bg-slate-950/40 text-xs space-y-2"
+                className="p-3.5 rounded-xl border border-slate-200/90 bg-white text-xs space-y-1.5 shadow-2xs"
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-2">
-                    <span className="text-slate-300 font-medium">
-                      {h.fromUser ? h.fromUser.name : <span className="text-slate-500 italic">Unassigned</span>}
+                    <span className="text-slate-600 font-medium text-[11px]">
+                      {h.fromUser ? h.fromUser.name : "Unassigned"}
                     </span>
-                    <ArrowRight className="h-3 w-3 text-slate-500" />
-                    <span className="text-indigo-300 font-medium">
-                      {h.toUser ? h.toUser.name : <span className="text-slate-500 italic">Unassigned</span>}
+                    <ArrowRight className="h-3 w-3 text-slate-400" />
+                    <span className="text-slate-900 font-semibold text-[11px]">
+                      {h.toUser ? h.toUser.name : "Unassigned"}
                     </span>
                   </div>
-                  <span className="text-[10px] text-slate-500 font-mono">
+                  <span className="text-[10px] text-slate-400 font-mono">
                     {formatDate(h.assignedAt)}
                   </span>
                 </div>
                 {h.assignedBy && (
-                  <div className="flex items-center space-x-1.5 text-[11px] text-slate-400">
-                    <User className="h-3 w-3 text-slate-500" />
+                  <div className="text-[10px] text-slate-400 flex items-center gap-1">
+                    <User className="h-3 w-3" />
                     <span>Assigned by {h.assignedBy.name}</span>
                   </div>
                 )}

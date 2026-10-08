@@ -73,19 +73,19 @@ function ResetPasswordForm() {
 
   if (!token) {
     return (
-      <Card className="border-slate-800 bg-slate-900/90 text-slate-100 shadow-2xl backdrop-blur-xl">
+      <Card className="border-slate-200/90 bg-white text-slate-900 shadow-md">
         <CardHeader className="space-y-1 text-center">
-          <CardTitle className="text-2xl font-bold tracking-tight text-white">Invalid Reset Link</CardTitle>
-          <CardDescription className="text-slate-400">
+          <CardTitle className="text-2xl font-bold tracking-tight text-slate-900">Invalid Reset Link</CardTitle>
+          <CardDescription className="text-slate-500">
             No reset token was found in this link.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4 text-center">
-          <p className="text-sm text-slate-400">
+          <p className="text-sm text-slate-600">
             Please make sure you clicked the full URL provided in the password reset email.
           </p>
           <Link href="/forgot-password">
-            <Button variant="outline" className="w-full border-slate-700 hover:bg-slate-800 text-slate-200">
+            <Button variant="outline" className="w-full border-slate-300 hover:bg-slate-50 text-slate-700">
               Request New Reset Link
             </Button>
           </Link>
@@ -95,27 +95,27 @@ function ResetPasswordForm() {
   }
 
   return (
-    <Card className="border-slate-800 bg-slate-900/90 text-slate-100 shadow-2xl backdrop-blur-xl">
+    <Card className="border-slate-200/90 bg-white text-slate-900 shadow-md">
       <CardHeader className="space-y-1 text-center">
-        <CardTitle className="text-2xl font-bold tracking-tight text-white">Set New Password</CardTitle>
-        <CardDescription className="text-slate-400">
+        <CardTitle className="text-2xl font-bold tracking-tight text-slate-900">Set New Password</CardTitle>
+        <CardDescription className="text-slate-500">
           Enter a new secure password for your account
         </CardDescription>
       </CardHeader>
 
       {isSuccess ? (
         <CardContent className="space-y-4 pt-2">
-          <div className="flex items-start space-x-3 rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-4 text-sm text-emerald-300">
-            <CheckCircle2 className="h-5 w-5 shrink-0 mt-0.5 text-emerald-400" />
+          <div className="flex items-start space-x-3 rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800">
+            <CheckCircle2 className="h-5 w-5 shrink-0 mt-0.5 text-emerald-600" />
             <div>
-              <p className="font-semibold text-emerald-200">Password Updated</p>
-              <p className="mt-1 text-slate-300">
+              <p className="font-semibold text-emerald-900">Password Updated</p>
+              <p className="mt-1 text-slate-700">
                 Your password has been changed. Redirecting you to sign in...
               </p>
             </div>
           </div>
           <Link href="/login">
-            <Button className="w-full bg-indigo-600 hover:bg-indigo-500 text-white mt-2">
+            <Button className="w-full bg-indigo-600 hover:bg-indigo-700 text-white mt-2">
               Go to Sign In
             </Button>
           </Link>
@@ -124,14 +124,14 @@ function ResetPasswordForm() {
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-4">
             {error && (
-              <div className="flex items-start space-x-3 rounded-lg border border-rose-500/30 bg-rose-500/10 p-3 text-sm text-rose-400">
-                <AlertCircle className="h-5 w-5 shrink-0 mt-0.5 text-rose-400" />
+              <div className="flex items-start space-x-3 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                <AlertCircle className="h-5 w-5 shrink-0 mt-0.5 text-red-600" />
                 <span>{error}</span>
               </div>
             )}
 
             <div className="space-y-2">
-              <Label htmlFor="password" className="text-slate-300">
+              <Label htmlFor="password" className="text-slate-700 text-xs font-semibold">
                 New Password
               </Label>
               <Input
@@ -141,15 +141,15 @@ function ResetPasswordForm() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="border-slate-700 bg-slate-800/60 text-white placeholder:text-slate-500 focus-visible:ring-indigo-500"
+                className="border-slate-300 bg-white text-slate-900 placeholder:text-slate-400 focus-visible:ring-indigo-600 text-xs h-9"
               />
-              <p className="text-[11px] text-slate-400">
+              <p className="text-[11px] text-slate-500">
                 Minimum 8 characters with uppercase, lowercase, number, and symbol.
               </p>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="confirmPassword" className="text-slate-300">
+              <Label htmlFor="confirmPassword" className="text-slate-700 text-xs font-semibold">
                 Confirm New Password
               </Label>
               <Input
@@ -159,14 +159,14 @@ function ResetPasswordForm() {
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
-                className="border-slate-700 bg-slate-800/60 text-white placeholder:text-slate-500 focus-visible:ring-indigo-500"
+                className="border-slate-300 bg-white text-slate-900 placeholder:text-slate-400 focus-visible:ring-indigo-600 text-xs h-9"
               />
             </div>
 
             <Button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-2 shadow-lg shadow-indigo-600/25 transition-all"
+              className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 shadow-xs transition-all text-xs h-9"
             >
               {isLoading ? (
                 <>
@@ -179,10 +179,10 @@ function ResetPasswordForm() {
             </Button>
           </CardContent>
 
-          <CardFooter className="flex justify-center border-t border-slate-800/60 pt-4">
+          <CardFooter className="flex justify-center border-t border-slate-100 pt-4">
             <Link
               href="/login"
-              className="inline-flex items-center text-xs font-medium text-slate-400 hover:text-white transition"
+              className="inline-flex items-center text-xs font-medium text-slate-500 hover:text-indigo-600 transition"
             >
               <ArrowLeft className="mr-1 h-3.5 w-3.5" />
               Cancel and Return to Sign In

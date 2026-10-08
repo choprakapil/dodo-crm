@@ -125,3 +125,10 @@ export const dispositionListQuerySchema = z.object({
 });
 
 export type DispositionListQuery = z.infer<typeof dispositionListQuerySchema>;
+
+export const dispositionReassignChildrenSchema = z.object({
+  targetParentId: z.string().trim().nullable().optional().or(z.literal("")),
+});
+
+export type DispositionReassignChildrenInput = z.infer<typeof dispositionReassignChildrenSchema>;
+

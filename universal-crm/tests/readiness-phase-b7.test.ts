@@ -309,7 +309,7 @@ export async function runPhaseB7ProductionReadinessTests() {
   const readyRes = await readyRoute();
   assert.equal(readyRes.status, 200, "Readiness probe must return 200 OK when DB is healthy");
   const readyJson = (await readyRes.json()) as any;
-  assert.equal(readyJson.status, "ok");
+  assert.ok(readyJson.status === "ready" || readyJson.status === "ok", "Readiness status must be ready or ok");
   assert.equal(readyJson.checks.database.status, "ok");
   passedTests++;
   console.log("  ✓ Test H: Health & Readiness probe behavior verified");

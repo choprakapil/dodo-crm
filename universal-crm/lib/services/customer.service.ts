@@ -93,7 +93,7 @@ export class CustomerService {
         some: {
           OR: [
             ...(digitsOnly.length >= 3 ? [{ normalizedPhone: { contains: digitsOnly } }] : []),
-            { rawPhone: { contains: phone.trim(), mode: "insensitive" as const } },
+            { rawPhone: { contains: phone.trim() } },
           ],
         },
       };
@@ -102,7 +102,7 @@ export class CustomerService {
     if (email && email.trim()) {
       where.emails = {
         some: {
-          email: { contains: email.trim().toLowerCase(), mode: "insensitive" as const },
+          email: { contains: email.trim().toLowerCase() },
         },
       };
     }
@@ -118,17 +118,17 @@ export class CustomerService {
           some: {
             OR: [
               { normalizedPhone: { contains: digitsOnly } },
-              { rawPhone: { contains: term, mode: "insensitive" } },
+              { rawPhone: { contains: term } },
             ],
           },
         });
       }
 
       where.OR = [
-        { name: { contains: term, mode: "insensitive" } },
-        { displayName: { contains: term, mode: "insensitive" } },
-        { companyName: { contains: term, mode: "insensitive" } },
-        { emails: { some: { email: { contains: term.toLowerCase(), mode: "insensitive" } } } },
+        { name: { contains: term } },
+        { displayName: { contains: term } },
+        { companyName: { contains: term } },
+        { emails: { some: { email: { contains: term.toLowerCase() } } } },
         ...phoneFilters.map((pf) => ({ phones: pf })),
       ];
     }

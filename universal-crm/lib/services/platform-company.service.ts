@@ -17,6 +17,7 @@ import { generateSecureToken, hashToken } from "@/lib/utils/tokens";
 import { emailService, EmailTemplates } from "@/lib/services/email";
 import { getAppUrl } from "@/lib/config";
 import { logger } from "@/lib/logger";
+import { hashPassword } from "@/lib/auth/password";
 import { PlatformAuditLogService } from "./platform-audit-log.service";
 import { QuotaService } from "./quota.service";
 import { CompanyStatus, UserStatus, DataScope, Prisma } from "@prisma/client";
@@ -178,9 +179,9 @@ export class PlatformCompanyService {
     if (query.search) {
       const term = query.search.trim();
       where.OR = [
-        { name: { contains: term, mode: "insensitive" } },
-        { slug: { contains: term, mode: "insensitive" } },
-        { email: { contains: term, mode: "insensitive" } },
+        { name: { contains: term } },
+        { slug: { contains: term } },
+        { email: { contains: term } },
       ];
     }
 
@@ -363,6 +364,9 @@ export class PlatformCompanyService {
       throw new ValidationError(`Plan tier '${input.planTier}' not found.`);
     }
 
+    const hasAdminPassword = Boolean(input.adminPassword && input.adminPassword.trim().length >= 6);
+    const initialHashedPassword = hasAdminPassword ? await hashPassword(input.adminPassword!.trim()) : null;
+
     // Generate invitation token for initial admin
     const rawInviteToken = generateSecureToken(32);
     const inviteTokenHash = hashToken(rawInviteToken);
@@ -376,12 +380,17 @@ export class PlatformCompanyService {
           name: input.name.trim(),
           slug,
           email: input.initialAdminEmail.toLowerCase().trim(),
+          phone: input.phone?.trim() || null,
           timezone: input.timezone,
           currency: input.currency,
           status: CompanyStatus.ACTIVE,
           planId: plan.id,
           onboardingCompleted: false,
           onboardingStep: "PROFILE",
+          historyPreviewFields: (input.limitOverrides || input.featureOverrides) ? {
+            limitOverrides: input.limitOverrides || null,
+            featureOverrides: input.featureOverrides || null,
+          } : undefined,
         },
       });
 
@@ -429,7 +438,7 @@ export class PlatformCompanyService {
         });
       }
 
-      // 5. Create Initial Admin User in INVITED state
+      // 5. Create Initial Admin User (ACTIVE if password provided, INVITED if omitted)
       const adminRole = createdRoles["Admin"];
       const initialAdmin = await tx.user.create({
         data: {
@@ -437,20 +446,23 @@ export class PlatformCompanyService {
           roleId: adminRole.id,
           email: input.initialAdminEmail.toLowerCase().trim(),
           name: input.initialAdminName.trim(),
-          status: UserStatus.INVITED,
+          status: hasAdminPassword ? UserStatus.ACTIVE : UserStatus.INVITED,
+          hashedPassword: initialHashedPassword,
         },
       });
 
-      // 6. Create Invitation record
-      await tx.invitation.create({
-        data: {
-          companyId: company.id,
-          roleId: adminRole.id,
-          email: initialAdmin.email,
-          tokenHash: inviteTokenHash,
-          expiresAt: inviteExpiresAt,
-        },
-      });
+      // 6. Create Invitation record if invited
+      if (!hasAdminPassword) {
+        await tx.invitation.create({
+          data: {
+            companyId: company.id,
+            roleId: adminRole.id,
+            email: initialAdmin.email,
+            tokenHash: inviteTokenHash,
+            expiresAt: inviteExpiresAt,
+          },
+        });
+      }
 
       return { company, initialAdmin };
     });

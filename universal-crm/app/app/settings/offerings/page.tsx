@@ -5,7 +5,7 @@ import { SettingsNav } from "@/components/settings/settings-nav";
 import { OfferingsWorkspace } from "@/components/settings/offerings-workspace";
 
 export const metadata = {
-  title: "Products & Services | Universal CRM",
+  title: "Products & Services | DODO CRM",
   description: "Configure product and service offerings, base pricing, and price override rules.",
 };
 
@@ -26,18 +26,9 @@ export default async function OfferingsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100">
-      <LeadNav
-        companyName={authContext.company.name}
-        companySlug={authContext.company.slug}
-        userName={authContext.user.name}
-        userEmail={authContext.user.email}
-        roleName={authContext.role.name}
-      />
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <SettingsNav />
-        <OfferingsWorkspace />
-      </main>
+    <div className="flex-1 space-y-6 p-4 sm:p-8 max-w-7xl mx-auto">
+      <SettingsNav />
+      <OfferingsWorkspace />
     </div>
   );
 }

@@ -188,56 +188,26 @@ export function serializeCsv(
   return [headerLine, ...dataLines].join("\r\n");
 }
 
+export {
+  detectIntelligentHeaders,
+  normalizeHeader,
+  CORE_IMPORT_FIELDS,
+  type HeaderConfidence,
+  type HeaderMatchStatus,
+  type HeaderDetectionResult,
+  type IntelligentDetectionSummary,
+  type CustomFieldDefinition,
+} from "./csv-header-detector";
+
+import { detectIntelligentHeaders, CustomFieldDefinition } from "./csv-header-detector";
+
 /**
  * Auto-detects column mappings between CSV headers and CRM fields (core fields + custom fields).
  */
 export function detectColumnMappings(
   csvHeaders: string[],
-  customFields: Array<{ key: string; label: string }> = []
+  customFields: CustomFieldDefinition[] = []
 ): Record<string, string> {
-  const mappings: Record<string, string> = {};
-
-  const normalizedCoreFields: Record<string, string[]> = {
-    name: ["name", "lead name", "lead_name", "full name", "fullname", "contact name", "client name"],
-    email: ["email", "email address", "email_address", "e-mail", "e mail", "e mail address", "work email", "mail"],
-    phone: ["phone", "phone number", "phone_number", "mobile", "mobile number", "telephone", "contact number"],
-    company: ["company", "company name", "organization", "org", "business", "account"],
-    amount: ["amount", "deal value", "deal_value", "value", "deal amount", "budget"],
-    priority: ["priority", "lead priority", "urgency"],
-    status: ["status", "lead status", "stage"],
-    source: ["source", "lead source", "channel"],
-    assignedUser: ["assigned user", "assigned_user", "assignee", "owner", "sales rep"],
-    team: ["team", "team name", "team_name", "department"],
-  };
-
-  for (const header of csvHeaders) {
-    const norm = header.toLowerCase().replace(/[-_]/g, " ").trim();
-
-    let matched = false;
-
-    // Check core fields
-    for (const [fieldKey, aliases] of Object.entries(normalizedCoreFields)) {
-      if (aliases.includes(norm) || norm === fieldKey.toLowerCase()) {
-        mappings[header] = fieldKey;
-        matched = true;
-        break;
-      }
-    }
-
-    if (matched) continue;
-
-    // Check custom fields by key or label
-    for (const cf of customFields) {
-      const cfKeyNorm = cf.key.toLowerCase().replace(/[-_]/g, " ").trim();
-      const cfLabelNorm = cf.label.toLowerCase().replace(/[-_]/g, " ").trim();
-
-      if (norm === cfKeyNorm || norm === cfLabelNorm) {
-        mappings[header] = `cf_${cf.key}`;
-        matched = true;
-        break;
-      }
-    }
-  }
-
-  return mappings;
+  const result = detectIntelligentHeaders(csvHeaders, customFields);
+  return result.suggestedMappings;
 }

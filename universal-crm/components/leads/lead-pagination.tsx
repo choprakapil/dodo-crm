@@ -34,11 +34,11 @@ export function LeadPagination({
   const endIdx = Math.min(page * pageSize, total);
 
   return (
-    <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-400 px-1 py-2">
+    <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500 px-1 py-2">
       <div>
-        Showing <span className="font-semibold text-slate-200">{startIdx}</span> to{" "}
-        <span className="font-semibold text-slate-200">{endIdx}</span> of{" "}
-        <span className="font-semibold text-slate-200">{total}</span> leads
+        Showing <span className="font-semibold text-slate-800">{startIdx}</span> to{" "}
+        <span className="font-semibold text-slate-800">{endIdx}</span> of{" "}
+        <span className="font-semibold text-slate-800">{total}</span> leads
       </div>
 
       <div className="flex items-center space-x-2">
@@ -47,7 +47,7 @@ export function LeadPagination({
           size="sm"
           disabled={!hasPreviousPage}
           onClick={() => goToPage(page - 1)}
-          className="h-8 border-slate-800 bg-slate-900/60 text-slate-300 hover:bg-slate-800 disabled:opacity-40 text-xs px-2.5"
+          className="h-8 border-slate-200 bg-white text-slate-700 hover:text-slate-900 hover:bg-slate-50 disabled:opacity-40 text-xs px-2.5 shadow-2xs"
         >
           <ChevronLeft className="h-3.5 w-3.5 mr-1" />
           Previous
@@ -62,7 +62,7 @@ export function LeadPagination({
           size="sm"
           disabled={!hasNextPage}
           onClick={() => goToPage(page + 1)}
-          className="h-8 border-slate-800 bg-slate-900/60 text-slate-300 hover:bg-slate-800 disabled:opacity-40 text-xs px-2.5"
+          className="h-8 border-slate-200 bg-white text-slate-700 hover:text-slate-900 hover:bg-slate-50 disabled:opacity-40 text-xs px-2.5 shadow-2xs"
         >
           Next
           <ChevronRight className="h-3.5 w-3.5 ml-1" />

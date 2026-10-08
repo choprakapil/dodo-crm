@@ -21,7 +21,7 @@ export class TeamService {
       throw new ForbiddenError("Permission denied: teams.view required");
     }
 
-    const { page, limit, search, isActive } = query;
+    const { page, limit, search, isActive, departmentId, divisionId } = query;
 
     const where: Prisma.TeamWhereInput = {
       companyId: ctx.company.id,
@@ -31,8 +31,18 @@ export class TeamService {
       where.isActive = isActive;
     }
 
+    if (departmentId) {
+      where.departmentId = departmentId;
+    }
+
+    if (divisionId) {
+      where.department = {
+        divisionId,
+      };
+    }
+
     if (search && search.trim().length > 0) {
-      where.name = { contains: search.trim(), mode: "insensitive" };
+      where.name = { contains: search.trim() };
     }
 
     const [total, teams] = await Promise.all([
@@ -50,6 +60,19 @@ export class TeamService {
               email: true,
             },
           },
+          department: {
+            select: {
+              id: true,
+              name: true,
+              divisionId: true,
+              division: {
+                select: {
+                  id: true,
+                  name: true,
+                },
+              },
+            },
+          },
           _count: {
             select: {
               members: true,
@@ -64,6 +87,15 @@ export class TeamService {
       id: t.id,
       name: t.name,
       description: t.description,
+      departmentId: t.departmentId,
+      department: t.department
+        ? {
+            id: t.department.id,
+            name: t.department.name,
+            divisionId: t.department.divisionId,
+            division: t.department.division,
+          }
+        : null,
       isActive: t.isActive,
       createdAt: t.createdAt,
       updatedAt: t.updatedAt,
@@ -94,6 +126,19 @@ export class TeamService {
             id: true,
             name: true,
             email: true,
+          },
+        },
+        department: {
+          select: {
+            id: true,
+            name: true,
+            divisionId: true,
+            division: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
           },
         },
         members: {
@@ -132,6 +177,15 @@ export class TeamService {
       id: team.id,
       name: team.name,
       description: team.description,
+      departmentId: team.departmentId,
+      department: team.department
+        ? {
+            id: team.department.id,
+            name: team.department.name,
+            divisionId: team.department.divisionId,
+            division: team.department.division,
+          }
+        : null,
       isActive: team.isActive,
       createdAt: team.createdAt,
       updatedAt: team.updatedAt,
@@ -164,6 +218,21 @@ export class TeamService {
       throw new ValidationError("A team with this name already exists");
     }
 
+    // If departmentId specified, verify department belongs to tenant
+    if (data.departmentId) {
+      const dept = await prisma.department.findFirst({
+        where: {
+          id: data.departmentId,
+          companyId: ctx.company.id,
+          deletedAt: null,
+        },
+      });
+
+      if (!dept) {
+        throw new ValidationError("Specified department does not exist in this company");
+      }
+    }
+
     // If managerId specified, verify user belongs to tenant
     if (data.managerId) {
       const user = await prisma.user.findFirst({
@@ -184,6 +253,7 @@ export class TeamService {
         companyId: ctx.company.id,
         name: data.name,
         description: data.description,
+        departmentId: data.departmentId || null,
         managerId: data.managerId,
         isActive: data.isActive ?? true,
       },
@@ -193,6 +263,19 @@ export class TeamService {
             id: true,
             name: true,
             email: true,
+          },
+        },
+        department: {
+          select: {
+            id: true,
+            name: true,
+            divisionId: true,
+            division: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
           },
         },
       },
@@ -225,6 +308,7 @@ export class TeamService {
         entityId: team.id,
         metadata: {
           name: team.name,
+          departmentId: team.departmentId,
           managerId: team.managerId,
         },
       },
@@ -268,6 +352,21 @@ export class TeamService {
       }
     }
 
+    // If departmentId specified/changed, verify department belongs to tenant
+    if (data.departmentId !== undefined && data.departmentId !== null) {
+      const dept = await prisma.department.findFirst({
+        where: {
+          id: data.departmentId,
+          companyId: ctx.company.id,
+          deletedAt: null,
+        },
+      });
+
+      if (!dept) {
+        throw new ValidationError("Specified department does not exist in this company");
+      }
+    }
+
     // If manager changed, verify user
     if (data.managerId) {
       const user = await prisma.user.findFirst({
@@ -288,6 +387,7 @@ export class TeamService {
       data: {
         ...(data.name ? { name: data.name } : {}),
         ...(data.description !== undefined ? { description: data.description } : {}),
+        ...(data.departmentId !== undefined ? { departmentId: data.departmentId } : {}),
         ...(data.managerId !== undefined ? { managerId: data.managerId } : {}),
         ...(data.isActive !== undefined ? { isActive: data.isActive } : {}),
       },
@@ -297,6 +397,19 @@ export class TeamService {
             id: true,
             name: true,
             email: true,
+          },
+        },
+        department: {
+          select: {
+            id: true,
+            name: true,
+            divisionId: true,
+            division: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
           },
         },
       },

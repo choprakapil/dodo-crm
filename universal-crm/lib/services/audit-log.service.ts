@@ -68,11 +68,11 @@ export class AuditLogService {
     if (query.search && query.search.trim().length > 0) {
       const term = query.search.trim();
       where.OR = [
-        { action: { contains: term, mode: "insensitive" } },
-        { entityType: { contains: term, mode: "insensitive" } },
-        { entityId: { contains: term, mode: "insensitive" } },
-        { user: { name: { contains: term, mode: "insensitive" } } },
-        { user: { email: { contains: term, mode: "insensitive" } } },
+        { action: { contains: term } },
+        { entityType: { contains: term } },
+        { entityId: { contains: term } },
+        { user: { name: { contains: term } } },
+        { user: { email: { contains: term } } },
       ];
     }
 

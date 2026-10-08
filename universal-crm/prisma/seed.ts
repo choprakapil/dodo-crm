@@ -45,7 +45,7 @@ async function seedPlans() {
     {
       name: "Free",
       code: PlanTier.FREE,
-      description: "Basic features for small teams testing Universal CRM.",
+      description: "Basic features for small teams testing DODO CRM.",
       maxUsers: 2,
       maxLeads: 100,
       features: { customFields: false, export: false, analytics: true, auditLogs: false },

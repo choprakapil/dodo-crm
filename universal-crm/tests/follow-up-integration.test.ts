@@ -123,7 +123,7 @@ export async function runFollowUpIntegrationTests() {
 
   // TEST 5: Delete Follow-up
   console.log("  → [Delete Follow-up] Deleting follow-up...");
-  const deleteRes = await FollowUpService.deleteFollowUp(acmeCtx, followUp.id);
+  const deleteRes = await (FollowUpService as any).deleteFollowUp(acmeCtx, followUp.id);
   assert.equal(deleteRes.success, true);
 
   const check = await prisma.task.findUnique({

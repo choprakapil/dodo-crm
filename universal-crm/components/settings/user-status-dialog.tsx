@@ -65,14 +65,14 @@ export function UserStatusDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md bg-slate-900 border-slate-800 text-slate-100">
+      <DialogContent className="sm:max-w-md bg-white border-slate-200 text-slate-900 shadow-xl">
         <DialogHeader>
           <div className="flex items-center space-x-2">
             <div
               className={`p-2 rounded-lg border ${
                 isDisabling
-                  ? "bg-rose-500/10 text-rose-400 border-rose-500/20"
-                  : "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                  ? "bg-rose-50 text-rose-600 border-rose-200"
+                  : "bg-emerald-50 text-emerald-600 border border-emerald-200"
               }`}
             >
               {isDisabling ? (
@@ -82,10 +82,10 @@ export function UserStatusDialog({
               )}
             </div>
             <div>
-              <DialogTitle className="text-lg font-semibold text-slate-100">
+              <DialogTitle className="text-lg font-semibold text-slate-900">
                 {isDisabling ? "Disable User Account" : "Activate User Account"}
               </DialogTitle>
-              <DialogDescription className="text-xs text-slate-400">
+              <DialogDescription className="text-xs text-slate-500">
                 {isDisabling
                   ? `Are you sure you want to disable ${userName}'s account?`
                   : `Are you sure you want to reactivate ${userName}'s account?`}
@@ -96,17 +96,17 @@ export function UserStatusDialog({
 
         <div className="py-2 space-y-3">
           {error && (
-            <div className="p-2.5 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs">
+            <div className="p-2.5 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-xs">
               {error}
             </div>
           )}
 
           {isDisabling ? (
-            <p className="text-xs text-slate-300 leading-relaxed">
-              Disabling this account will <strong className="text-rose-400">immediately invalidate all active sessions</strong>. The user will be blocked from logging in or making any API calls until re-enabled by an administrator.
+            <p className="text-xs text-slate-600 leading-relaxed">
+              Disabling this account will <strong className="text-rose-600 font-semibold">immediately invalidate all active sessions</strong>. The user will be blocked from logging in or making any API calls until re-enabled by an administrator.
             </p>
           ) : (
-            <p className="text-xs text-slate-300 leading-relaxed">
+            <p className="text-xs text-slate-600 leading-relaxed">
               Reactivating this account will restore the user&apos;s ability to sign in and perform actions based on their assigned role permissions.
             </p>
           )}
@@ -118,7 +118,7 @@ export function UserStatusDialog({
             variant="outline"
             onClick={() => onOpenChange(false)}
             disabled={loading}
-            className="border-slate-800 bg-slate-800/40 hover:bg-slate-800 text-slate-300 text-xs h-9"
+            className="border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs h-9"
           >
             Cancel
           </Button>
@@ -126,10 +126,10 @@ export function UserStatusDialog({
             type="button"
             onClick={handleConfirm}
             disabled={loading}
-            className={`text-xs h-9 font-medium text-white ${
+            className={`text-xs h-9 font-medium text-white shadow-sm ${
               isDisabling
-                ? "bg-rose-600 hover:bg-rose-500"
-                : "bg-emerald-600 hover:bg-emerald-500"
+                ? "bg-rose-600 hover:bg-rose-700"
+                : "bg-emerald-600 hover:bg-emerald-700"
             }`}
           >
             {loading ? (

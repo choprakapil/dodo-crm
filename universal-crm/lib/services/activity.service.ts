@@ -62,7 +62,7 @@ export class ActivityService {
     }
 
     if (search && search.length > 0) {
-      where.description = { contains: search, mode: "insensitive" };
+      where.description = { contains: search };
     }
 
     const skip = (page - 1) * limit;

@@ -21,11 +21,11 @@ export function ActivityBreakdownCard({
 }: ActivityBreakdownCardProps) {
   if (loading) {
     return (
-      <Card className="border-slate-800 bg-slate-900/60 backdrop-blur p-4 animate-pulse">
-        <div className="h-5 w-36 bg-slate-800 rounded mb-4" />
+      <Card className="border-slate-200/90 bg-white shadow-2xs p-4 animate-pulse">
+        <div className="h-5 w-36 bg-slate-100 rounded mb-4" />
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
           {[1, 2, 3, 4, 5].map((i) => (
-            <div key={i} className="h-14 bg-slate-800/40 rounded-lg" />
+            <div key={i} className="h-14 bg-slate-50 rounded-lg" />
           ))}
         </div>
       </Card>
@@ -37,48 +37,48 @@ export function ActivityBreakdownCard({
       label: "Calls",
       count: activities.byType.CALL,
       icon: Phone,
-      color: "text-blue-400",
-      bg: "bg-blue-500/10 border-blue-500/20",
+      color: "text-blue-600",
+      bg: "bg-blue-50 border-blue-200/80",
     },
     {
       label: "WhatsApp",
       count: activities.byType.WHATSAPP,
       icon: MessageSquare,
-      color: "text-emerald-400",
-      bg: "bg-emerald-500/10 border-emerald-500/20",
+      color: "text-emerald-600",
+      bg: "bg-emerald-50 border-emerald-200/80",
     },
     {
       label: "Emails",
       count: activities.byType.EMAIL,
       icon: Mail,
-      color: "text-amber-400",
-      bg: "bg-amber-500/10 border-amber-500/20",
+      color: "text-amber-600",
+      bg: "bg-amber-50 border-amber-200/80",
     },
     {
       label: "Meetings",
       count: activities.byType.MEETING,
       icon: Calendar,
-      color: "text-violet-400",
-      bg: "bg-violet-500/10 border-violet-500/20",
+      color: "text-violet-600",
+      bg: "bg-violet-50 border-violet-200/80",
     },
     {
       label: "Notes",
       count: activities.byType.NOTE,
       icon: FileText,
-      color: "text-pink-400",
-      bg: "bg-pink-500/10 border-pink-500/20",
+      color: "text-pink-600",
+      bg: "bg-pink-50 border-pink-200/80",
     },
   ];
 
   return (
-    <Card className="border-slate-800 bg-slate-900/60 backdrop-blur shadow-sm">
+    <Card className="border-slate-200/90 bg-white shadow-2xs">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-sm font-semibold text-slate-200 flex items-center gap-2">
-            <Activity className="h-4 w-4 text-cyan-400" />
-            <span>Activity & Outreach</span>
+          <CardTitle className="text-sm font-semibold text-slate-800 flex items-center gap-2">
+            <Activity className="h-4 w-4 text-indigo-600" />
+            <span>Activity &amp; Outreach</span>
           </CardTitle>
-          <span className="text-xs text-slate-400 font-mono font-medium">
+          <span className="text-xs text-slate-500 font-mono font-medium">
             {activities.total} total
           </span>
         </div>
@@ -96,10 +96,10 @@ export function ActivityBreakdownCard({
             return (
               <div
                 key={item.label}
-                className="bg-slate-950/40 border border-slate-800/80 rounded-xl p-3 flex flex-col justify-between"
+                className="bg-slate-50/70 border border-slate-200/80 rounded-xl p-3 flex flex-col justify-between"
               >
                 <div className="flex items-center justify-between mb-1.5">
-                  <span className="text-xs text-slate-400 font-medium">
+                  <span className="text-xs text-slate-600 font-medium">
                     {item.label}
                   </span>
                   <div
@@ -110,7 +110,7 @@ export function ActivityBreakdownCard({
                 </div>
 
                 <div className="flex items-baseline justify-between mt-1">
-                  <span className="text-lg font-bold text-white tracking-tight">
+                  <span className="text-lg font-bold text-slate-900 tracking-tight">
                     {item.count}
                   </span>
                   <span className="text-[11px] text-slate-500 font-mono">

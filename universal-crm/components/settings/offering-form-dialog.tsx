@@ -130,37 +130,41 @@ export function OfferingFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg bg-slate-900 border-slate-800 text-slate-100">
+      <DialogContent className="sm:max-w-lg bg-white border-slate-200 text-slate-900 shadow-xl">
         <DialogHeader>
           <div className="flex items-center space-x-2">
-            <Package className="h-5 w-5 text-indigo-400" />
-            <DialogTitle>
-              {offering?.id ? "Edit Product / Service" : "Add Product or Service"}
-            </DialogTitle>
+            <div className="p-2 rounded-lg bg-indigo-50 text-indigo-600 border border-indigo-100">
+              <Package className="h-5 w-5" />
+            </div>
+            <div>
+              <DialogTitle className="text-lg font-semibold text-slate-900">
+                {offering?.id ? "Edit Product / Service" : "Add Product or Service"}
+              </DialogTitle>
+              <DialogDescription className="text-xs text-slate-500">
+                Configure offering catalog details, base pricing, and salesperson price override rules.
+              </DialogDescription>
+            </div>
           </div>
-          <DialogDescription className="text-slate-400">
-            Configure offering catalog details, base pricing, and salesperson price override rules.
-          </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4 py-2">
           {error && (
-            <div className="p-3 text-xs bg-red-950/40 border border-red-800 text-red-300 rounded-md">
+            <div className="p-3 text-xs bg-rose-50 border border-rose-200 text-rose-700 rounded-md">
               {error}
             </div>
           )}
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5 col-span-2 sm:col-span-1">
-              <Label className="text-xs text-slate-300">Offering Type</Label>
+              <Label className="text-xs text-slate-700 font-medium">Offering Type</Label>
               <div className="grid grid-cols-2 gap-2">
                 <button
                   type="button"
                   onClick={() => setType("PRODUCT")}
                   className={`py-2 text-xs font-medium rounded-md border text-center transition-colors ${
                     type === "PRODUCT"
-                      ? "bg-indigo-600 border-indigo-500 text-white shadow-sm"
-                      : "bg-slate-800/80 border-slate-700 text-slate-400 hover:text-slate-200"
+                      ? "bg-indigo-600 border-indigo-600 text-white shadow-sm"
+                      : "bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100"
                   }`}
                 >
                   Product
@@ -170,8 +174,8 @@ export function OfferingFormDialog({
                   onClick={() => setType("SERVICE")}
                   className={`py-2 text-xs font-medium rounded-md border text-center transition-colors ${
                     type === "SERVICE"
-                      ? "bg-indigo-600 border-indigo-500 text-white shadow-sm"
-                      : "bg-slate-800/80 border-slate-700 text-slate-400 hover:text-slate-200"
+                      ? "bg-indigo-600 border-indigo-600 text-white shadow-sm"
+                      : "bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100"
                   }`}
                 >
                   Service
@@ -180,36 +184,36 @@ export function OfferingFormDialog({
             </div>
 
             <div className="space-y-1.5 col-span-2 sm:col-span-1">
-              <Label htmlFor="code" className="text-xs text-slate-300">
-                Code / SKU <span className="text-slate-500 font-normal">(optional)</span>
+              <Label htmlFor="code" className="text-xs text-slate-700 font-medium">
+                Code / SKU <span className="text-slate-400 font-normal">(optional)</span>
               </Label>
               <Input
                 id="code"
                 placeholder="e.g. LAP-001, AMC-1YR"
                 value={code}
                 onChange={(e) => setCode(e.target.value)}
-                className="bg-slate-800 border-slate-700 text-slate-100"
+                className="bg-white border-slate-200 text-xs text-slate-900 placeholder:text-slate-400 focus-visible:ring-indigo-500"
               />
             </div>
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="name" className="text-xs text-slate-300">
-              Name <span className="text-red-400">*</span>
+            <Label htmlFor="name" className="text-xs text-slate-700 font-medium">
+              Name <span className="text-rose-500">*</span>
             </Label>
             <Input
               id="name"
               placeholder="e.g. Commercial Air Conditioner, Annual Maintenance"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="bg-slate-800 border-slate-700 text-slate-100"
+              className="bg-white border-slate-200 text-xs text-slate-900 placeholder:text-slate-400 focus-visible:ring-indigo-500"
               required
             />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5 col-span-2 sm:col-span-1">
-              <Label htmlFor="defaultPrice" className="text-xs text-slate-300">
+              <Label htmlFor="defaultPrice" className="text-xs text-slate-700 font-medium">
                 Base / Default Price ({currency})
               </Label>
               <Input
@@ -220,13 +224,13 @@ export function OfferingFormDialog({
                 placeholder="0.00"
                 value={defaultPrice}
                 onChange={(e) => setDefaultPrice(e.target.value)}
-                className="bg-slate-800 border-slate-700 text-slate-100"
+                className="bg-white border-slate-200 text-xs text-slate-900 placeholder:text-slate-400 focus-visible:ring-indigo-500"
                 required
               />
             </div>
 
             <div className="space-y-1.5 col-span-2 sm:col-span-1">
-              <Label htmlFor="currency" className="text-xs text-slate-300">
+              <Label htmlFor="currency" className="text-xs text-slate-700 font-medium">
                 Currency
               </Label>
               <Input
@@ -234,37 +238,37 @@ export function OfferingFormDialog({
                 placeholder="USD, INR, EUR..."
                 value={currency}
                 onChange={(e) => setCurrency(e.target.value.toUpperCase())}
-                className="bg-slate-800 border-slate-700 text-slate-100 font-mono text-xs"
+                className="bg-white border-slate-200 text-slate-900 font-mono text-xs focus-visible:ring-indigo-500"
               />
             </div>
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="description" className="text-xs text-slate-300">
-              Description <span className="text-slate-500 font-normal">(optional)</span>
+            <Label htmlFor="description" className="text-xs text-slate-700 font-medium">
+              Description <span className="text-slate-400 font-normal">(optional)</span>
             </Label>
             <textarea
               id="description"
               placeholder="Detailed offering notes, specifications, or terms..."
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="w-full rounded-md bg-slate-800 border border-slate-700 text-slate-100 p-2.5 min-h-[70px] text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500"
+              className="w-full rounded-md bg-white border border-slate-200 text-slate-900 p-2.5 min-h-[70px] text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500 placeholder:text-slate-400"
             />
           </div>
 
-          <div className="pt-2 border-t border-slate-800 space-y-3">
+          <div className="pt-2 border-t border-slate-100 space-y-3">
             <label className="flex items-start space-x-3 cursor-pointer">
               <input
                 type="checkbox"
                 checked={allowSalesPriceOverride}
                 onChange={(e) => setAllowSalesPriceOverride(e.target.checked)}
-                className="mt-0.5 rounded border-slate-700 bg-slate-800 text-indigo-600 focus:ring-indigo-500"
+                className="mt-0.5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
               />
               <div className="text-xs">
-                <span className="font-medium text-slate-200">
+                <span className="font-medium text-slate-900">
                   Allow Sales Price Override
                 </span>
-                <p className="text-slate-400 text-[11px] mt-0.5">
+                <p className="text-slate-500 text-[11px] mt-0.5">
                   When enabled, sales reps can quote a customized price during enquiry creation.
                   If disabled, the base price is locked.
                 </p>
@@ -276,30 +280,30 @@ export function OfferingFormDialog({
                 type="checkbox"
                 checked={isActive}
                 onChange={(e) => setIsActive(e.target.checked)}
-                className="mt-0.5 rounded border-slate-700 bg-slate-800 text-indigo-600 focus:ring-indigo-500"
+                className="mt-0.5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
               />
               <div className="text-xs">
-                <span className="font-medium text-slate-200">Active Offering</span>
-                <p className="text-slate-400 text-[11px] mt-0.5">
+                <span className="font-medium text-slate-900">Active Offering</span>
+                <p className="text-slate-500 text-[11px] mt-0.5">
                   Inactive offerings cannot be selected for new enquiries. Historical enquiries remain intact.
                 </p>
               </div>
             </label>
           </div>
 
-          <DialogFooter className="pt-4">
+          <DialogFooter className="pt-4 gap-2">
             <Button
               type="button"
               variant="outline"
               onClick={() => onOpenChange(false)}
-              className="bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700"
+              className="border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs h-9"
             >
               Cancel
             </Button>
             <Button
               type="submit"
               disabled={loading}
-              className="bg-indigo-600 hover:bg-indigo-500 text-white"
+              className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs h-9 shadow-sm"
             >
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {offering?.id ? "Save Changes" : "Create Offering"}

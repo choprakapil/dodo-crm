@@ -48,7 +48,7 @@ export const GET = withObservability(async function GET(req?: NextRequest) {
 
   const response = NextResponse.json(
     {
-      status: isReady ? "ok" : "not_ready",
+      status: isReady ? "ready" : "not_ready",
       timestamp: new Date().toISOString(),
       requestId: reqId,
       checks,

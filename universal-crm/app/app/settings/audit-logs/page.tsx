@@ -5,7 +5,7 @@ import Link from "next/link";
 import { FileText, HelpCircle } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "Audit Logs | Universal CRM",
+  title: "Audit Logs | DODO CRM",
   description: "Immutable, tenant-isolated audit trail of system activities and changes",
 };
 

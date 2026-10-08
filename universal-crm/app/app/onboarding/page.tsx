@@ -34,8 +34,8 @@ export default async function OnboardingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 selection:bg-indigo-500 selection:text-white">
-      {/* Universal CRM Navigation */}
+    <div className="min-h-screen bg-[#F8FAFC] text-slate-900 selection:bg-indigo-500 selection:text-white">
+      {/* DODO CRM Navigation */}
       <LeadNav
         companyName={company.name}
         companySlug={company.slug}

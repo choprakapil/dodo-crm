@@ -53,13 +53,13 @@ export function AssignSelector({
         value={userId}
         disabled={isUpdating}
         onChange={handleChange}
-        className="h-7 rounded-md border border-slate-800 bg-slate-900 px-2 text-[11px] text-slate-300 outline-none transition hover:border-slate-700 disabled:opacity-50 cursor-pointer max-w-[140px] truncate"
+        className="h-7 rounded-md border border-slate-200 bg-white px-2 text-[11px] text-slate-700 outline-hidden transition hover:border-slate-300 disabled:opacity-50 cursor-pointer max-w-[140px] truncate shadow-2xs font-medium"
       >
-        <option value="" className="text-slate-500">
+        <option value="" className="text-slate-400 bg-white">
           Unassigned
         </option>
         {users.map((u) => (
-          <option key={u.id} value={u.id} className="text-slate-200">
+          <option key={u.id} value={u.id} className="text-slate-800 bg-white">
             {u.name}
           </option>
         ))}

@@ -78,49 +78,40 @@ export default async function FollowUpsPage({ searchParams }: FollowUpsPageProps
   }));
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 selection:bg-indigo-500 selection:text-white">
-      <LeadNav
-        companyName={authContext.company.name}
-        companySlug={authContext.company.slug}
-        userName={authContext.user.name}
-        userEmail={authContext.user.email}
-        roleName={authContext.role.name}
-      />
-
-      <main className="max-w-7xl mx-auto p-4 sm:p-8 space-y-6">
-        {/* Page Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="space-y-1">
-            <h1 className="text-2xl font-bold tracking-tight text-white flex items-center gap-2.5">
-              <Clock className="h-6 w-6 text-blue-400" />
-              <span>Follow-up Workspace</span>
-              <Link
-                href="/app/help?article=follow-ups"
-                className="text-slate-500 hover:text-indigo-400 transition ml-1"
-                title="Follow-ups Help Guide"
-              >
-                <HelpCircle className="h-5 w-5" />
-              </Link>
+    <div className="space-y-6">
+      {/* Page Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-200 pb-4">
+        <div>
+          <div className="flex items-center gap-2">
+            <h1 className="text-lg sm:text-xl font-bold tracking-tight text-slate-900">
+              Follow-up Workspace
             </h1>
-            <p className="text-xs text-slate-400">
-              Manage scheduled calls, meetings, reminders, and follow-ups across your pipeline.
-            </p>
+            <Link
+              href="/app/help?article=follow-ups"
+              className="text-slate-400 hover:text-slate-600 transition"
+              title="Follow-ups Help Guide"
+            >
+              <HelpCircle className="h-4 w-4" />
+            </Link>
           </div>
+          <p className="text-xs text-slate-500 mt-1">
+            Manage scheduled calls, meetings, reminders, and follow-ups across your pipeline.
+          </p>
         </div>
+      </div>
 
-        {/* Workspace Table & Filters */}
-        <FollowUpWorkspace
-          initialItems={serializedItems}
-          pagination={{
-            page: result.pagination.page,
-            pageSize: result.pagination.pageSize,
-            totalCount: result.pagination.total,
-            totalPages: result.pagination.totalPages,
-          }}
-          currentDueFilter={dueFilter}
-          currentSearch={search}
-        />
-      </main>
+      {/* Workspace Table & Filters */}
+      <FollowUpWorkspace
+        initialItems={serializedItems}
+        pagination={{
+          page: result.pagination.page,
+          pageSize: result.pagination.pageSize,
+          totalCount: result.pagination.total,
+          totalPages: result.pagination.totalPages,
+        }}
+        currentDueFilter={dueFilter}
+        currentSearch={search}
+      />
     </div>
   );
 }

@@ -42,10 +42,10 @@ export class LeadExportService {
 
     if (query.search && query.search.length > 0) {
       where.OR = [
-        { name: { contains: query.search, mode: "insensitive" } },
-        { email: { contains: query.search, mode: "insensitive" } },
-        { phone: { contains: query.search, mode: "insensitive" } },
-        { company: { contains: query.search, mode: "insensitive" } },
+        { name: { contains: query.search } },
+        { email: { contains: query.search } },
+        { phone: { contains: query.search } },
+        { company: { contains: query.search } },
       ];
     }
 

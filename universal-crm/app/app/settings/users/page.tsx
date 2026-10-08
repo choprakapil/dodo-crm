@@ -79,29 +79,19 @@ export default async function UsersPage({ searchParams }: UsersPageProps) {
   const canManage = authContext.hasPermission("users", "manage");
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
-      <LeadNav
-        companyName={authContext.company.name}
-        companySlug={authContext.company.slug}
-        userName={authContext.user.name}
-        userEmail={authContext.user.email}
-        roleName={authContext.role.name}
+    <div className="flex-1 space-y-6 p-4 sm:p-8 max-w-7xl mx-auto">
+      <SettingsNav />
+
+      <UserWorkspace
+        initialUsers={serializedUsers}
+        total={result.pagination.total}
+        currentPage={result.pagination.page}
+        totalPages={result.pagination.totalPages}
+        initialSearch={search}
+        initialStatus={sp.status || "ALL"}
+        canManage={canManage}
+        currentUserId={authContext.user.id}
       />
-
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-8 py-6">
-        <SettingsNav />
-
-        <UserWorkspace
-          initialUsers={serializedUsers}
-          total={result.pagination.total}
-          currentPage={result.pagination.page}
-          totalPages={result.pagination.totalPages}
-          initialSearch={search}
-          initialStatus={sp.status || "ALL"}
-          canManage={canManage}
-          currentUserId={authContext.user.id}
-        />
-      </main>
     </div>
   );
 }

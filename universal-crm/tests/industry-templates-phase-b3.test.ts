@@ -1008,6 +1008,7 @@ export async function runPhaseB3IndustryTemplateTests() {
     // Clean up test data
     try {
       await prisma.customField.deleteMany({ where: { companyId: { in: [tenantAId, tenantBId] } } });
+      await prisma.disposition.updateMany({ where: { companyId: { in: [tenantAId, tenantBId] } }, data: { parentId: null } });
       await prisma.disposition.deleteMany({ where: { companyId: { in: [tenantAId, tenantBId] } } });
       await prisma.leadSource.deleteMany({ where: { companyId: { in: [tenantAId, tenantBId] } } });
       await prisma.offering.deleteMany({ where: { companyId: { in: [tenantAId, tenantBId] } } });

@@ -111,21 +111,21 @@ export function UserWorkspace({
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <div className="flex items-center space-x-2.5">
-            <h1 className="text-xl font-bold tracking-tight text-slate-100">
+            <h1 className="text-xl font-bold tracking-tight text-slate-900">
               User Management
             </h1>
-            <Badge variant="outline" className="border-indigo-500/30 text-indigo-400 bg-indigo-500/10 text-xs">
+            <Badge variant="outline" className="border-indigo-200 text-indigo-700 bg-indigo-50 text-xs">
               {total} Total Users
             </Badge>
             <Link
               href="/app/help?article=users"
-              className="text-slate-500 hover:text-indigo-400 transition ml-1"
+              className="text-slate-400 hover:text-indigo-600 transition ml-1"
               title="User Management Help Guide"
             >
               <HelpCircle className="h-4 w-4" />
             </Link>
           </div>
-          <p className="text-xs text-slate-400 mt-1">
+          <p className="text-xs text-slate-500 mt-1">
             Manage organization members, assign roles and teams, send invitations, and manage user lifecycle.
           </p>
         </div>
@@ -133,7 +133,7 @@ export function UserWorkspace({
         {canManage && (
           <Button
             onClick={() => setInviteOpen(true)}
-            className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs h-9 px-3.5 shadow-sm shadow-indigo-500/20"
+            className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs h-9 px-3.5 shadow-sm"
           >
             <UserPlus className="h-4 w-4 mr-1.5" />
             Invite User
@@ -142,15 +142,15 @@ export function UserWorkspace({
       </div>
 
       {/* Filter and Search Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-xl bg-slate-900/60 border border-slate-800">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-xl bg-white border border-slate-200 shadow-2xs">
         <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-500" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
           <Input
             placeholder="Search by name, email, or phone... (Press Enter)"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             onKeyDown={handleSearchKeyDown}
-            className="pl-9 bg-slate-950 border-slate-800 text-xs text-slate-200 placeholder:text-slate-500 h-9"
+            className="pl-9 bg-white border-slate-200 text-xs text-slate-900 placeholder:text-slate-400 h-9 focus-visible:ring-indigo-500"
           />
         </div>
 
@@ -167,8 +167,8 @@ export function UserWorkspace({
               }}
               className={`text-xs h-8 px-3 rounded-lg capitalize ${
                 statusFilter === st
-                  ? "bg-slate-800 text-slate-100 font-semibold border border-slate-700"
-                  : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/50"
+                  ? "bg-indigo-50 text-indigo-700 font-semibold border border-indigo-200"
+                  : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
               }`}
             >
               {st.toLowerCase()}
@@ -178,10 +178,10 @@ export function UserWorkspace({
       </div>
 
       {/* Users Table */}
-      <div className="rounded-xl border border-slate-800 bg-slate-900/40 overflow-hidden">
+      <div className="rounded-xl border border-slate-200 bg-white overflow-hidden shadow-2xs">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
-            <thead className="border-b border-slate-800 bg-slate-950/60 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+            <thead className="border-b border-slate-200 bg-slate-50 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
               <tr>
                 <th className="py-3 px-4">User</th>
                 <th className="py-3 px-4">Role</th>
@@ -192,11 +192,11 @@ export function UserWorkspace({
                 <th className="py-3 px-4 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800/60">
+            <tbody className="divide-y divide-slate-100">
               {initialUsers.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="py-12 text-center text-slate-500">
-                    <Users className="h-8 w-8 mx-auto mb-2 text-slate-600" />
+                    <Users className="h-8 w-8 mx-auto mb-2 text-slate-400" />
                     No users matching the criteria found.
                   </td>
                 </tr>
@@ -204,27 +204,27 @@ export function UserWorkspace({
                 initialUsers.map((user) => {
                   const isCurrentUser = user.id === currentUserId;
                   return (
-                    <tr key={user.id} className="hover:bg-slate-850/40 transition">
+                    <tr key={user.id} className="hover:bg-slate-50/80 transition">
                       <td className="py-3 px-4">
                         <div className="flex items-center space-x-3">
-                          <div className="h-8 w-8 rounded-full bg-gradient-to-tr from-indigo-600/40 to-violet-600/30 border border-indigo-500/30 flex items-center justify-center font-bold text-xs text-indigo-300">
+                          <div className="h-8 w-8 rounded-full bg-indigo-50 border border-indigo-100 flex items-center justify-center font-bold text-xs text-indigo-700">
                             {user.name.slice(0, 2).toUpperCase()}
                           </div>
                           <div>
                             <div className="flex items-center space-x-2">
                               <Link
                                 href={`/app/settings/users/${user.id}`}
-                                className="font-semibold text-slate-200 hover:text-indigo-400 transition"
+                                className="font-semibold text-slate-900 hover:text-indigo-600 transition"
                               >
                                 {user.name}
                               </Link>
                               {isCurrentUser && (
-                                <Badge className="bg-indigo-500/20 text-indigo-300 border-indigo-500/30 text-[9px] px-1 py-0">
+                                <Badge className="bg-indigo-50 text-indigo-700 border-indigo-200 text-[9px] px-1 py-0">
                                   You
                                 </Badge>
                               )}
                             </div>
-                            <div className="text-[11px] text-slate-400 font-mono mt-0.5">
+                            <div className="text-[11px] text-slate-500 font-mono mt-0.5">
                               {user.email}
                             </div>
                           </div>
@@ -234,23 +234,23 @@ export function UserWorkspace({
                       <td className="py-3 px-4">
                         <Badge
                           variant="secondary"
-                          className="bg-slate-800 border-slate-700 text-slate-200 text-[11px] font-normal"
+                          className="bg-slate-50 border border-slate-200 text-slate-700 text-[11px] font-normal"
                         >
-                          <ShieldCheck className="h-3 w-3 mr-1 text-indigo-400" />
+                          <ShieldCheck className="h-3 w-3 mr-1 text-indigo-600" />
                           {user.role.name}
                         </Badge>
                       </td>
 
                       <td className="py-3 px-4">
                         {user.teams.length === 0 ? (
-                          <span className="text-slate-500 italic">—</span>
+                          <span className="text-slate-400 italic">—</span>
                         ) : (
                           <div className="flex flex-wrap gap-1">
                             {user.teams.map((t) => (
                               <Badge
                                 key={t.id}
                                 variant="outline"
-                                className="border-slate-700 bg-slate-800/60 text-slate-300 text-[10px] px-1.5 py-0"
+                                className="border-slate-200 bg-slate-50 text-slate-700 text-[10px] px-1.5 py-0"
                               >
                                 {t.name}
                               </Badge>
@@ -264,21 +264,21 @@ export function UserWorkspace({
                           variant="outline"
                           className={`text-[10px] px-2 py-0.5 font-medium ${
                             user.status === "ACTIVE"
-                              ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400"
+                              ? "border-emerald-200 bg-emerald-50 text-emerald-700"
                               : user.status === "INVITED"
-                              ? "border-amber-500/30 bg-amber-500/10 text-amber-400"
-                              : "border-slate-700 bg-slate-800 text-slate-400"
+                              ? "border-amber-200 bg-amber-50 text-amber-700"
+                              : "border-slate-200 bg-slate-50 text-slate-500"
                           }`}
                         >
                           {user.status}
                         </Badge>
                       </td>
 
-                      <td className="py-3 px-4 text-slate-300 font-mono">
+                      <td className="py-3 px-4 text-slate-700 font-mono">
                         {user.assignedLeadsCount}
                       </td>
 
-                      <td className="py-3 px-4 text-slate-400 text-[11px]">
+                      <td className="py-3 px-4 text-slate-500 text-[11px]">
                         {new Date(user.createdAt).toLocaleDateString("en-US", {
                           month: "short",
                           day: "numeric",
@@ -288,18 +288,18 @@ export function UserWorkspace({
 
                       <td className="py-3 px-4 text-right">
                         <DropdownMenu>
-                          <DropdownMenuTrigger className="h-8 w-8 inline-flex items-center justify-center rounded-lg p-0 text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-colors">
+                          <DropdownMenuTrigger className="h-8 w-8 inline-flex items-center justify-center rounded-lg p-0 text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors">
                             <MoreHorizontal className="h-4 w-4" />
                           </DropdownMenuTrigger>
                           <DropdownMenuContent
                             align="end"
-                            className="bg-slate-900 border-slate-800 text-slate-200 text-xs w-48"
+                            className="bg-white border-slate-200 text-slate-900 text-xs w-48 shadow-lg"
                           >
                             <DropdownMenuItem
                               onClick={() => router.push(`/app/settings/users/${user.id}`)}
                               className="flex items-center cursor-pointer"
                             >
-                              <Eye className="h-3.5 w-3.5 mr-2 text-slate-400" />
+                              <Eye className="h-3.5 w-3.5 mr-2 text-slate-500" />
                               View Profile
                             </DropdownMenuItem>
 
@@ -309,7 +309,7 @@ export function UserWorkspace({
                                   onClick={() => setEditUser(user)}
                                   className="flex items-center cursor-pointer"
                                 >
-                                  <Edit className="h-3.5 w-3.5 mr-2 text-indigo-400" />
+                                  <Edit className="h-3.5 w-3.5 mr-2 text-indigo-600" />
                                   Edit Details & Role
                                 </DropdownMenuItem>
 
@@ -319,7 +319,7 @@ export function UserWorkspace({
                                   }
                                   className="flex items-center cursor-pointer"
                                 >
-                                  <KeyRound className="h-3.5 w-3.5 mr-2 text-amber-400" />
+                                  <KeyRound className="h-3.5 w-3.5 mr-2 text-amber-600" />
                                   Reset Password
                                 </DropdownMenuItem>
 
@@ -334,7 +334,7 @@ export function UserWorkspace({
                                             targetStatus: "DISABLED",
                                           })
                                         }
-                                        className="flex items-center cursor-pointer text-rose-400 focus:text-rose-400"
+                                        className="flex items-center cursor-pointer text-rose-600 focus:text-rose-600"
                                       >
                                         <UserX className="h-3.5 w-3.5 mr-2" />
                                         Disable Account
@@ -348,7 +348,7 @@ export function UserWorkspace({
                                             targetStatus: "ACTIVE",
                                           })
                                         }
-                                        className="flex items-center cursor-pointer text-emerald-400 focus:text-emerald-400"
+                                        className="flex items-center cursor-pointer text-emerald-600 focus:text-emerald-600"
                                       >
                                         <UserCheck className="h-3.5 w-3.5 mr-2" />
                                         Reactivate Account
@@ -371,7 +371,7 @@ export function UserWorkspace({
 
         {/* Pagination Footer */}
         {totalPages > 1 && (
-          <div className="flex items-center justify-between px-4 py-3 border-t border-slate-800 bg-slate-950/40 text-xs text-slate-400">
+          <div className="flex items-center justify-between px-4 py-3 border-t border-slate-200 bg-slate-50 text-xs text-slate-600">
             <div>
               Page {currentPage} of {totalPages}
             </div>
@@ -381,7 +381,7 @@ export function UserWorkspace({
                 size="sm"
                 disabled={currentPage <= 1}
                 onClick={() => applyFilters(undefined, undefined, currentPage - 1)}
-                className="border-slate-800 bg-slate-900 hover:bg-slate-800 text-slate-300 h-8 px-2.5"
+                className="border-slate-200 bg-white hover:bg-slate-50 text-slate-700 h-8 px-2.5"
               >
                 <ChevronLeft className="h-4 w-4 mr-1" />
                 Previous
@@ -391,7 +391,7 @@ export function UserWorkspace({
                 size="sm"
                 disabled={currentPage >= totalPages}
                 onClick={() => applyFilters(undefined, undefined, currentPage + 1)}
-                className="border-slate-800 bg-slate-900 hover:bg-slate-800 text-slate-300 h-8 px-2.5"
+                className="border-slate-200 bg-white hover:bg-slate-50 text-slate-700 h-8 px-2.5"
               >
                 Next
                 <ChevronRight className="h-4 w-4 ml-1" />

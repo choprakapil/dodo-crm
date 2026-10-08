@@ -80,9 +80,9 @@ export class PlatformAuditLogService {
     if (query.search) {
       const term = query.search.trim();
       where.OR = [
-        { action: { contains: term, mode: "insensitive" } },
-        { entityType: { contains: term, mode: "insensitive" } },
-        { entityId: { contains: term, mode: "insensitive" } },
+        { action: { contains: term } },
+        { entityType: { contains: term } },
+        { entityId: { contains: term } },
       ];
     }
 

@@ -38,6 +38,7 @@ export function InviteUserDialog({
 }: InviteUserDialogProps) {
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
   const [roleId, setRoleId] = useState("");
   const [teamId, setTeamId] = useState("");
   const [roles, setRoles] = useState<RoleOption[]>([]);
@@ -104,6 +105,7 @@ export function InviteUserDialog({
         body: JSON.stringify({
           email: email.trim().toLowerCase(),
           name: name.trim() || undefined,
+          phone: phone.trim() || undefined,
           roleId,
           teamId: teamId || undefined,
         }),
@@ -136,6 +138,7 @@ export function InviteUserDialog({
   const handleClose = () => {
     setEmail("");
     setName("");
+    setPhone("");
     setRoleId("");
     setTeamId("");
     setInviteLink(null);
@@ -145,17 +148,17 @@ export function InviteUserDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-md bg-slate-900 border-slate-800 text-slate-100">
+      <DialogContent className="sm:max-w-md bg-white border-slate-200 text-slate-900 shadow-xl">
         <DialogHeader>
           <div className="flex items-center space-x-2">
-            <div className="p-2 rounded-lg bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+            <div className="p-2 rounded-lg bg-indigo-50 text-indigo-600 border border-indigo-100">
               <UserPlus className="h-5 w-5" />
             </div>
             <div>
-              <DialogTitle className="text-lg font-semibold text-slate-100">
+              <DialogTitle className="text-lg font-semibold text-slate-900">
                 Invite New User
               </DialogTitle>
-              <DialogDescription className="text-xs text-slate-400">
+              <DialogDescription className="text-xs text-slate-500">
                 Send an invitation link with 7-day validity to join your organization.
               </DialogDescription>
             </div>
@@ -164,28 +167,28 @@ export function InviteUserDialog({
 
         {inviteLink ? (
           <div className="space-y-4 py-3">
-            <div className="p-3.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 text-xs">
+            <div className="p-3.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs">
               <p className="font-semibold mb-1">Invitation Created Successfully!</p>
-              <p className="text-slate-300">
-                An invitation email has been dispatched to <span className="font-mono text-emerald-200">{email}</span>. You can also share the direct link below:
+              <p className="text-slate-600">
+                An invitation email has been dispatched to <span className="font-mono text-emerald-700 font-medium">{email}</span>. You can also share the direct link below:
               </p>
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-xs text-slate-300">Direct Invitation Link</Label>
+              <Label className="text-xs text-slate-700">Direct Invitation Link</Label>
               <div className="flex items-center space-x-2">
                 <Input
                   readOnly
                   value={inviteLink}
-                  className="bg-slate-950 border-slate-800 text-xs text-slate-300 font-mono select-all"
+                  className="bg-slate-50 border-slate-200 text-xs text-slate-700 font-mono select-all"
                 />
                 <Button
                   type="button"
                   variant="outline"
                   onClick={handleCopyLink}
-                  className="border-slate-700 bg-slate-800 hover:bg-slate-700 text-slate-200 h-9 px-3 shrink-0"
+                  className="border-slate-200 bg-white hover:bg-slate-50 text-slate-700 h-9 px-3 shrink-0"
                 >
-                  {copied ? <Check className="h-4 w-4 text-emerald-400" /> : <Copy className="h-4 w-4" />}
+                  {copied ? <Check className="h-4 w-4 text-emerald-600" /> : <Copy className="h-4 w-4" />}
                 </Button>
               </div>
             </div>
@@ -194,7 +197,7 @@ export function InviteUserDialog({
               <Button
                 type="button"
                 onClick={handleClose}
-                className="w-full bg-indigo-600 hover:bg-indigo-500 text-white text-xs h-9"
+                className="w-full bg-indigo-600 hover:bg-indigo-700 text-white text-xs h-9 shadow-sm"
               >
                 Done
               </Button>
@@ -203,14 +206,14 @@ export function InviteUserDialog({
         ) : (
           <form onSubmit={handleInvite} className="space-y-4 py-2">
             {error && (
-              <div className="p-2.5 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs">
+              <div className="p-2.5 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-xs">
                 {error}
               </div>
             )}
 
             <div className="space-y-1.5">
-              <Label htmlFor="invite-email" className="text-xs text-slate-300">
-                Work Email <span className="text-rose-400">*</span>
+              <Label htmlFor="invite-email" className="text-xs text-slate-700 font-medium">
+                Work Email <span className="text-rose-500">*</span>
               </Label>
               <Input
                 id="invite-email"
@@ -219,35 +222,50 @@ export function InviteUserDialog({
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="bg-slate-950 border-slate-800 text-xs text-slate-100 placeholder:text-slate-500 focus-visible:ring-indigo-500"
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <Label htmlFor="invite-name" className="text-xs text-slate-300">
-                Full Name (Optional)
-              </Label>
-              <Input
-                id="invite-name"
-                type="text"
-                placeholder="John Doe"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="bg-slate-950 border-slate-800 text-xs text-slate-100 placeholder:text-slate-500 focus-visible:ring-indigo-500"
+                className="bg-white border-slate-200 text-xs text-slate-900 placeholder:text-slate-400 focus-visible:ring-indigo-500"
               />
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <Label htmlFor="invite-role" className="text-xs text-slate-300">
-                  Role <span className="text-rose-400">*</span>
+                <Label htmlFor="invite-name" className="text-xs text-slate-700 font-medium">
+                  Full Name (Optional)
+                </Label>
+                <Input
+                  id="invite-name"
+                  type="text"
+                  placeholder="John Doe"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="bg-white border-slate-200 text-xs text-slate-900 placeholder:text-slate-400 focus-visible:ring-indigo-500"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="invite-phone" className="text-xs text-slate-700 font-medium">
+                  Phone Number (Optional)
+                </Label>
+                <Input
+                  id="invite-phone"
+                  type="tel"
+                  placeholder="+1 (555) 000-0000"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  className="bg-white border-slate-200 text-xs text-slate-900 placeholder:text-slate-400 focus-visible:ring-indigo-500"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="invite-role" className="text-xs text-slate-700 font-medium">
+                  Role <span className="text-rose-500">*</span>
                 </Label>
                 <select
                   id="invite-role"
                   value={roleId}
                   onChange={(e) => setRoleId(e.target.value)}
                   disabled={fetchingOptions}
-                  className="w-full h-9 rounded-md bg-slate-950 border border-slate-800 text-xs text-slate-200 px-3 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  className="w-full h-9 rounded-md bg-white border border-slate-200 text-xs text-slate-900 px-3 focus:outline-none focus:ring-1 focus:ring-indigo-500"
                 >
                   {roles.map((r) => (
                     <option key={r.id} value={r.id}>
@@ -258,7 +276,7 @@ export function InviteUserDialog({
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="invite-team" className="text-xs text-slate-300">
+                <Label htmlFor="invite-team" className="text-xs text-slate-700 font-medium">
                   Assign Team (Optional)
                 </Label>
                 <select
@@ -266,7 +284,7 @@ export function InviteUserDialog({
                   value={teamId}
                   onChange={(e) => setTeamId(e.target.value)}
                   disabled={fetchingOptions}
-                  className="w-full h-9 rounded-md bg-slate-950 border border-slate-800 text-xs text-slate-200 px-3 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  className="w-full h-9 rounded-md bg-white border border-slate-200 text-xs text-slate-900 px-3 focus:outline-none focus:ring-1 focus:ring-indigo-500"
                 >
                   <option value="">No Team</option>
                   {teams.map((t) => (
@@ -284,14 +302,14 @@ export function InviteUserDialog({
                 variant="outline"
                 onClick={handleClose}
                 disabled={loading}
-                className="border-slate-800 bg-slate-800/40 hover:bg-slate-800 text-slate-300 text-xs h-9"
+                className="border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs h-9"
               >
                 Cancel
               </Button>
               <Button
                 type="submit"
                 disabled={loading || fetchingOptions}
-                className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs h-9 font-medium"
+                className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs h-9 font-medium shadow-sm"
               >
                 {loading ? (
                   <>

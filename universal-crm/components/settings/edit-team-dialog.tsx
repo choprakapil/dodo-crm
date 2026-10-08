@@ -14,52 +14,73 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Edit, Loader2 } from "lucide-react";
 
+interface TeamData {
+  id: string;
+  name: string;
+  description: string | null;
+  departmentId?: string | null;
+  isActive: boolean;
+  manager?: {
+    id: string;
+    name: string;
+    email: string;
+  } | null;
+  members?: unknown[];
+}
+
+interface DepartmentOption {
+  id: string;
+  name: string;
+  divisionName?: string;
+}
+
 interface UserOption {
   id: string;
   name: string;
   email: string;
 }
 
-interface TeamData {
-  id: string;
-  name: string;
-  description?: string | null;
-  isActive: boolean;
-  manager?: { id: string; name: string } | null;
-}
-
 interface EditTeamDialogProps {
-  team: TeamData | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  team: TeamData | null;
   onTeamUpdated?: () => void;
 }
 
 export function EditTeamDialog({
-  team,
   open,
   onOpenChange,
+  team,
   onTeamUpdated,
 }: EditTeamDialogProps) {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+  const [departmentId, setDepartmentId] = useState("");
   const [managerId, setManagerId] = useState("");
   const [isActive, setIsActive] = useState(true);
+  const [departments, setDepartments] = useState<DepartmentOption[]>([]);
   const [users, setUsers] = useState<UserOption[]>([]);
-  const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchUsers = useCallback(async () => {
+  const fetchData = useCallback(async () => {
     setFetching(true);
     try {
-      const res = await fetch("/api/v1/users?limit=100&status=ACTIVE");
-      if (res.ok) {
-        const data = await res.json();
-        setUsers(data.data || []);
+      const [deptRes, usersRes] = await Promise.all([
+        fetch("/api/v1/departments?limit=100&isActive=true"),
+        fetch("/api/v1/users?limit=100&status=ACTIVE"),
+      ]);
+      const [deptData, usersData] = await Promise.all([deptRes.json(), usersRes.json()]);
+
+      if (deptData.success && Array.isArray(deptData.data)) {
+        setDepartments(deptData.data);
+      }
+      if (usersData.success && Array.isArray(usersData.data)) {
+        setUsers(usersData.data);
       }
     } catch {
-      setError("Failed to load users");
+      setError("Failed to load options");
     } finally {
       setFetching(false);
     }
@@ -69,12 +90,13 @@ export function EditTeamDialog({
     if (open && team) {
       setName(team.name);
       setDescription(team.description || "");
+      setDepartmentId(team.departmentId || "");
       setManagerId(team.manager?.id || "");
       setIsActive(team.isActive);
       setError(null);
-      fetchUsers();
+      fetchData();
     }
-  }, [open, team, fetchUsers]);
+  }, [open, team, fetchData]);
 
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -90,6 +112,7 @@ export function EditTeamDialog({
         body: JSON.stringify({
           name: name.trim(),
           description: description.trim() || null,
+          departmentId: departmentId || null,
           managerId: managerId || null,
           isActive,
         }),
@@ -115,18 +138,18 @@ export function EditTeamDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md bg-slate-900 border-slate-800 text-slate-100">
+      <DialogContent className="sm:max-w-md bg-white border-slate-200 text-slate-900 shadow-xl">
         <DialogHeader>
-          <div className="flex items-center space-x-2">
-            <div className="p-2 rounded-lg bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+          <div className="flex items-center space-x-2.5">
+            <div className="p-2 rounded-lg bg-indigo-50 text-indigo-600 border border-indigo-100">
               <Edit className="h-5 w-5" />
             </div>
             <div>
-              <DialogTitle className="text-lg font-semibold text-slate-100">
+              <DialogTitle className="text-base font-semibold text-slate-900">
                 Edit Team
               </DialogTitle>
-              <DialogDescription className="text-xs text-slate-400">
-                Update team name, description, lead assignment, and active status.
+              <DialogDescription className="text-xs text-slate-500">
+                Update team name, department, description, lead assignment, and active status.
               </DialogDescription>
             </div>
           </div>
@@ -134,39 +157,59 @@ export function EditTeamDialog({
 
         <form onSubmit={handleUpdate} className="space-y-4 py-2">
           {error && (
-            <div className="p-2.5 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs">
+            <div className="p-2.5 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-xs">
               {error}
             </div>
           )}
 
           <div className="space-y-1.5">
-            <Label htmlFor="edit-team-name" className="text-xs text-slate-300">
-              Team Name <span className="text-rose-400">*</span>
+            <Label htmlFor="edit-team-name" className="text-xs text-slate-700 font-medium">
+              Team Name <span className="text-rose-500">*</span>
             </Label>
             <Input
               id="edit-team-name"
               value={name}
               onChange={(e) => setName(e.target.value)}
               required
-              className="bg-slate-950 border-slate-800 text-xs text-slate-100"
+              className="bg-slate-50/50 border-slate-200 text-xs text-slate-900 focus-visible:ring-indigo-500"
             />
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="edit-team-desc" className="text-xs text-slate-300">
+            <Label htmlFor="edit-team-department" className="text-xs text-slate-700 font-medium">
+              Parent Department
+            </Label>
+            <select
+              id="edit-team-department"
+              value={departmentId}
+              onChange={(e) => setDepartmentId(e.target.value)}
+              disabled={fetching}
+              className="w-full h-9 rounded-md bg-slate-50/50 border border-slate-200 text-xs text-slate-900 px-3 focus:outline-hidden focus:ring-1 focus:ring-indigo-500"
+            >
+              <option value="">No Department (Unassigned)</option>
+              {departments.map((d) => (
+                <option key={d.id} value={d.id}>
+                  {d.divisionName ? `${d.divisionName} → ` : ""}{d.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="edit-team-desc" className="text-xs text-slate-700 font-medium">
               Description
             </Label>
             <textarea
               id="edit-team-desc"
-              rows={3}
+              rows={2}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="w-full rounded-md bg-slate-950 border border-slate-800 text-xs text-slate-100 p-2.5 placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+              className="w-full rounded-md bg-slate-50/50 border border-slate-200 text-xs text-slate-900 p-2.5 placeholder:text-slate-400 focus:outline-hidden focus:ring-1 focus:ring-indigo-500 resize-none"
             />
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="edit-team-manager" className="text-xs text-slate-300">
+            <Label htmlFor="edit-team-manager" className="text-xs text-slate-700 font-medium">
               Team Manager / Lead
             </Label>
             <select
@@ -174,7 +217,7 @@ export function EditTeamDialog({
               value={managerId}
               onChange={(e) => setManagerId(e.target.value)}
               disabled={fetching}
-              className="w-full h-9 rounded-md bg-slate-950 border border-slate-800 text-xs text-slate-200 px-3 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+              className="w-full h-9 rounded-md bg-slate-50/50 border border-slate-200 text-xs text-slate-900 px-3 focus:outline-hidden focus:ring-1 focus:ring-indigo-500"
             >
               <option value="">No Manager Assigned</option>
               {users.map((u) => (
@@ -191,27 +234,27 @@ export function EditTeamDialog({
               id="edit-team-active"
               checked={isActive}
               onChange={(e) => setIsActive(e.target.checked)}
-              className="rounded border-slate-800 text-indigo-600 focus:ring-indigo-500 bg-slate-950 h-4 w-4"
+              className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 h-4 w-4"
             />
-            <Label htmlFor="edit-team-active" className="text-xs text-slate-300 cursor-pointer">
+            <Label htmlFor="edit-team-active" className="text-xs text-slate-700 cursor-pointer">
               Active Team (Visible in assignment selectors)
             </Label>
           </div>
 
-          <DialogFooter className="pt-3 gap-2">
+          <DialogFooter className="pt-3 gap-2 border-t border-slate-100">
             <Button
               type="button"
               variant="outline"
               onClick={() => onOpenChange(false)}
               disabled={loading}
-              className="border-slate-800 bg-slate-800/40 hover:bg-slate-800 text-slate-300 text-xs h-9"
+              className="border-slate-200 text-slate-700 hover:bg-slate-50 text-xs h-9"
             >
               Cancel
             </Button>
             <Button
               type="submit"
               disabled={loading || fetching || !name.trim()}
-              className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs h-9 font-medium"
+              className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs h-9 font-medium shadow-xs"
             >
               {loading ? (
                 <>

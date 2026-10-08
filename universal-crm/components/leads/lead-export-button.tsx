@@ -54,7 +54,7 @@ export function LeadExportButton() {
       size="sm"
       onClick={handleExport}
       disabled={isExporting}
-      className="border-slate-800 text-xs text-slate-300 hover:text-white"
+      className="border-slate-200 bg-white text-xs text-slate-700 hover:bg-slate-50 shadow-2xs"
     >
       {isExporting ? (
         <>

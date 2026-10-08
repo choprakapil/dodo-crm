@@ -5,7 +5,7 @@ import Link from "next/link";
 import { ShieldCheck, HelpCircle } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "Security & Sessions | Universal CRM",
+  title: "Security & Sessions | DODO CRM",
   description: "Manage credentials, password policies, and active sessions",
 };
 

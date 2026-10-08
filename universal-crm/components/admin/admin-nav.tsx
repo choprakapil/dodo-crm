@@ -77,19 +77,19 @@ export function AdminNav() {
   ];
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b bg-slate-900 text-white shadow-sm">
+    <header className="sticky top-0 z-40 w-full border-b border-slate-200 bg-white text-slate-900 shadow-2xs">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         {/* Brand & Badge */}
         <div className="flex items-center gap-6">
           <Link href="/admin" className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-600 font-bold text-white shadow-sm">
-              UC
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-600 font-bold text-white shadow-sm text-xs">
+              DODO
             </div>
             <div className="flex flex-col">
-              <span className="text-sm font-semibold tracking-tight text-white">
-                Universal CRM
+              <span className="text-sm font-semibold tracking-tight text-slate-900">
+                DODO CRM
               </span>
-              <span className="text-[10px] font-medium uppercase tracking-wider text-indigo-300">
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-indigo-600">
                 Platform Console
               </span>
             </div>
@@ -103,10 +103,10 @@ export function AdminNav() {
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`flex items-center gap-2 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                  className={`flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
                     item.active
-                      ? "bg-slate-800 text-white shadow-inner"
-                      : "text-slate-300 hover:bg-slate-800/60 hover:text-white"
+                      ? "bg-indigo-50 text-indigo-700 font-semibold border border-indigo-100"
+                      : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
                   }`}
                 >
                   <Icon className="h-4 w-4" />
@@ -120,8 +120,8 @@ export function AdminNav() {
         {/* Right Actions */}
         <div className="flex items-center gap-3">
           <div className="hidden text-right sm:block">
-            <p className="text-xs font-medium text-slate-200">{adminEmail}</p>
-            <span className="inline-flex items-center rounded-full bg-indigo-500/20 px-2 py-0.5 text-[10px] font-semibold text-indigo-300">
+            <p className="text-xs font-medium text-slate-800">{adminEmail}</p>
+            <span className="inline-flex items-center rounded-full bg-indigo-50 border border-indigo-100 px-2 py-0.5 text-[10px] font-semibold text-indigo-700">
               SUPER ADMIN
             </span>
           </div>
@@ -131,7 +131,7 @@ export function AdminNav() {
             size="sm"
             onClick={handleLogout}
             disabled={isLoggingOut}
-            className="text-slate-300 hover:bg-slate-800 hover:text-white"
+            className="text-slate-600 hover:bg-slate-100 hover:text-slate-900"
           >
             <LogOut className="mr-1.5 h-4 w-4" />
             <span className="text-xs">Sign Out</span>
@@ -140,7 +140,7 @@ export function AdminNav() {
       </div>
 
       {/* Mobile Nav Bar */}
-      <div className="flex border-t border-slate-800 px-4 py-2 md:hidden">
+      <div className="flex border-t border-slate-100 px-4 py-2 md:hidden bg-slate-50">
         <div className="flex w-full overflow-x-auto space-x-1">
           {navItems.map((item) => {
             const Icon = item.icon;
@@ -148,8 +148,10 @@ export function AdminNav() {
               <Link
                 key={item.href}
                 href={item.href}
-                className={`flex shrink-0 items-center gap-1.5 rounded px-2.5 py-1 text-xs font-medium ${
-                  item.active ? "bg-slate-800 text-white" : "text-slate-400"
+                className={`flex shrink-0 items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-medium ${
+                  item.active
+                    ? "bg-indigo-50 text-indigo-700 font-semibold border border-indigo-100"
+                    : "text-slate-600 hover:bg-slate-100"
                 }`}
               >
                 <Icon className="h-3.5 w-3.5" />

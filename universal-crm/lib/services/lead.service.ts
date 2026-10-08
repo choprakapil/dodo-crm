@@ -71,10 +71,10 @@ export class LeadService {
 
     if (search && search.length > 0) {
       where.OR = [
-        { name: { contains: search, mode: "insensitive" } },
-        { email: { contains: search, mode: "insensitive" } },
-        { phone: { contains: search, mode: "insensitive" } },
-        { company: { contains: search, mode: "insensitive" } },
+        { name: { contains: search } },
+        { email: { contains: search } },
+        { phone: { contains: search } },
+        { company: { contains: search } },
       ];
     }
 

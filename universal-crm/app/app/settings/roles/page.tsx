@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Shield, HelpCircle } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "Roles & Permissions | Universal CRM",
+  title: "Roles & Permissions | DODO CRM",
   description: "Configure system and custom roles with fine-grained action scopes",
 };
 

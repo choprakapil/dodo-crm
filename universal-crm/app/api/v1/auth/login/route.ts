@@ -7,7 +7,8 @@ import { withObservability } from "@/lib/observability";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { verifyPassword } from "@/lib/auth/password";
-import { createDbSession, setSessionCookie } from "@/lib/auth/session";
+import { createDbSession } from "@/lib/auth/session";
+import { setSessionCookie, clearSuperAdminSessionCookie } from "@/lib/auth/cookies";
 import { loginSchema } from "@/lib/auth/validation";
 import { rateLimiter, RateLimits } from "@/lib/services/rate-limit";
 import { handleApiError, UnauthorizedError, ForbiddenError, RateLimitError } from "@/lib/errors";
@@ -135,8 +136,11 @@ export const POST = withObservability(async function POST(req: NextRequest) {
       },
     });
 
-    // 11. Set HTTP-only session cookie
+    // 11. Set HTTP-only session cookie and evict any super admin cookie if present (Air-gapped tenant isolation)
     await setSessionCookie(rawToken);
+    if (req.cookies.has("universal_crm_superadmin_session")) {
+      await clearSuperAdminSessionCookie();
+    }
 
     return NextResponse.json(
       {

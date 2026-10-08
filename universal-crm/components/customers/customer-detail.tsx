@@ -31,7 +31,13 @@ import {
   Star,
   Loader2,
   AlertTriangle,
+  MessageSquare,
+  DollarSign,
+  TrendingUp,
 } from "lucide-react";
+import { getTelUrl, getWhatsAppUrl, getMailtoUrl } from "@/lib/utils/contact-actions";
+import { PriorityBadge } from "@/components/leads/lead-badge";
+import { CommentThread } from "@/components/comments/comment-thread";
 
 interface CustomerData {
   id: string;
@@ -171,7 +177,7 @@ export function CustomerDetail({ customerId }: CustomerDetailProps) {
         toast.error(data.error?.message || "Failed to update customer");
       }
     } catch {
-      toast.error("Network error while updating customer profile");
+      toast.error("Network error while updating customer");
     } finally {
       setSavingEdit(false);
     }
@@ -355,8 +361,8 @@ export function CustomerDetail({ customerId }: CustomerDetailProps) {
 
   if (loading && !customer) {
     return (
-      <div className="flex flex-col items-center justify-center py-28 text-slate-400">
-        <Loader2 className="h-8 w-8 animate-spin text-indigo-500 mb-3" />
+      <div className="flex flex-col items-center justify-center py-28 text-slate-500">
+        <Loader2 className="h-8 w-8 animate-spin text-indigo-600 mb-3" />
         <p className="text-sm">Loading customer profile...</p>
       </div>
     );
@@ -364,11 +370,11 @@ export function CustomerDetail({ customerId }: CustomerDetailProps) {
 
   if (!customer) {
     return (
-      <div className="text-center py-20">
-        <h2 className="text-lg font-semibold text-white">Customer not found</h2>
+      <div className="text-center py-20 bg-white rounded-lg border border-slate-200/90 shadow-xs p-8">
+        <h2 className="text-lg font-semibold text-slate-900">Customer not found</h2>
         <Link
           href="/app/customers"
-          className="inline-flex items-center gap-1.5 text-sm text-indigo-400 mt-3"
+          className="inline-flex items-center gap-1.5 text-sm text-indigo-600 hover:text-indigo-700 mt-3 font-medium"
         >
           <ArrowLeft className="h-4 w-4" />
           Back to Customers
@@ -383,7 +389,7 @@ export function CustomerDetail({ customerId }: CustomerDetailProps) {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <Link
           href="/app/customers"
-          className="inline-flex items-center gap-2 text-sm text-slate-400 hover:text-slate-200 transition-colors self-start"
+          className="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-slate-900 transition-colors self-start font-medium"
         >
           <ArrowLeft className="h-4 w-4" />
           Back to Customers
@@ -394,7 +400,7 @@ export function CustomerDetail({ customerId }: CustomerDetailProps) {
             variant="outline"
             size="sm"
             onClick={() => setEditOpen(true)}
-            className="border-slate-700 bg-slate-900/60 hover:bg-slate-800 text-slate-200"
+            className="border-slate-200 bg-white hover:bg-slate-50 text-slate-700 shadow-xs"
           >
             <Edit2 className="h-3.5 w-3.5 mr-1.5" />
             Edit Profile
@@ -403,9 +409,9 @@ export function CustomerDetail({ customerId }: CustomerDetailProps) {
             variant="outline"
             size="sm"
             onClick={() => setDeleteOpen(true)}
-            className="border-rose-900/40 bg-rose-950/20 hover:bg-rose-900/40 text-rose-300"
+            className="border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-700 shadow-xs"
           >
-            <Trash2 className="h-3.5 w-3.5 mr-1.5 text-rose-400" />
+            <Trash2 className="h-3.5 w-3.5 mr-1.5 text-rose-600" />
             Delete Customer
           </Button>
         </div>
@@ -416,71 +422,115 @@ export function CustomerDetail({ customerId }: CustomerDetailProps) {
         {/* Left Column: Identity & Contact Cards */}
         <div className="space-y-6 lg:col-span-1">
           {/* Identity Card */}
-          <div className="rounded-lg border border-slate-800 bg-slate-950/70 p-5 shadow-sm space-y-4">
+          <div className="rounded-lg border border-slate-200/90 bg-white p-5 shadow-xs space-y-4">
             <div className="flex items-center gap-3">
-              <div className="h-12 w-12 rounded-full bg-indigo-950/80 border border-indigo-700/60 flex items-center justify-center text-indigo-300 font-bold text-lg">
+              <div className="h-12 w-12 rounded-full bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-lg">
                 {customer.name.slice(0, 2).toUpperCase()}
               </div>
               <div>
-                <h2 className="text-lg font-bold text-white leading-tight">
+                <h2 className="text-lg font-bold text-slate-900 leading-tight">
                   {customer.name}
                 </h2>
                 {customer.displayName && (
-                  <p className="text-xs text-slate-400">({customer.displayName})</p>
+                  <p className="text-xs text-slate-500">({customer.displayName})</p>
                 )}
                 {customer.companyName && (
-                  <p className="inline-flex items-center gap-1.5 text-xs text-indigo-300 mt-1 font-medium">
-                    <Building className="h-3 w-3 text-indigo-400" />
+                  <p className="inline-flex items-center gap-1.5 text-xs text-indigo-600 mt-1 font-medium">
+                    <Building className="h-3 w-3 text-indigo-500" />
                     {customer.companyName}
                   </p>
                 )}
               </div>
             </div>
 
+            {/* Quick 1-Click Contact Actions */}
+            {(() => {
+              const primaryPhone =
+                customer.phones.find((p) => p.isPrimary)?.normalizedPhone ||
+                customer.phones[0]?.normalizedPhone ||
+                customer.phones[0]?.rawPhone;
+              const primaryEmail =
+                customer.emails.find((e) => e.isPrimary)?.email || customer.emails[0]?.email;
+              const telUrl = getTelUrl(primaryPhone);
+              const waUrl = getWhatsAppUrl(primaryPhone);
+              const mailUrl = getMailtoUrl(primaryEmail, `Account Update: ${customer.name}`);
+
+              return (
+                <div className="flex flex-wrap items-center gap-2 pt-1">
+                  {telUrl && (
+                    <a
+                      href={telUrl}
+                      className="px-2.5 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 border border-emerald-200/60 text-emerald-700 text-xs font-semibold flex items-center gap-1.5 transition shadow-2xs"
+                    >
+                      <Phone className="h-3.5 w-3.5 text-emerald-600" /> Call
+                    </a>
+                  )}
+                  {waUrl && (
+                    <a
+                      href={waUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-2.5 py-1.5 rounded-lg bg-green-50 hover:bg-green-100 border border-green-200/60 text-green-700 text-xs font-semibold flex items-center gap-1.5 transition shadow-2xs"
+                    >
+                      <MessageSquare className="h-3.5 w-3.5 text-green-600" /> WhatsApp
+                    </a>
+                  )}
+                  {mailUrl && (
+                    <a
+                      href={mailUrl}
+                      className="px-2.5 py-1.5 rounded-lg bg-sky-50 hover:bg-sky-100 border border-sky-200/60 text-sky-700 text-xs font-semibold flex items-center gap-1.5 transition shadow-2xs"
+                    >
+                      <Mail className="h-3.5 w-3.5 text-sky-600" /> Email
+                    </a>
+                  )}
+                </div>
+              );
+            })()}
+
             {customer.notes && (
-              <div className="pt-2 border-t border-slate-800/80">
-                <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+              <div className="pt-2 border-t border-slate-100">
+                <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
                   Notes
                 </span>
-                <p className="text-xs text-slate-300 mt-1 whitespace-pre-wrap leading-relaxed">
+                <p className="text-xs text-slate-700 mt-1 whitespace-pre-wrap leading-relaxed">
                   {customer.notes}
                 </p>
               </div>
             )}
 
-            <div className="pt-2 border-t border-slate-800/80 text-[11px] text-slate-500">
+            <div className="pt-2 border-t border-slate-100 text-[11px] text-slate-400">
               Customer since: {new Date(customer.createdAt).toLocaleDateString()}
             </div>
           </div>
 
           {/* Phone Numbers Card */}
-          <div className="rounded-lg border border-slate-800 bg-slate-950/70 p-5 shadow-sm space-y-3">
+          <div className="rounded-lg border border-slate-200/90 bg-white p-5 shadow-xs space-y-3">
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-white flex items-center gap-2">
-                <Phone className="h-4 w-4 text-indigo-400" />
+              <h3 className="text-sm font-semibold text-slate-900 flex items-center gap-2">
+                <Phone className="h-4 w-4 text-indigo-600" />
                 Phone Numbers ({customer.phones.length})
               </h3>
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => setAddPhoneOpen(true)}
-                className="h-7 text-xs text-indigo-400 hover:text-indigo-300 hover:bg-indigo-950/40 px-2"
+                className="h-7 text-xs text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 px-2 font-medium"
               >
                 <Plus className="h-3 w-3 mr-1" />
                 Add
               </Button>
             </div>
 
-            <div className="divide-y divide-slate-800/60">
+            <div className="divide-y divide-slate-100">
               {customer.phones.map((p) => (
                 <div key={p.id} className="py-2.5 flex items-center justify-between gap-2">
                   <div>
                     <div className="flex items-center gap-2">
-                      <span className="font-mono text-xs font-medium text-slate-200">
+                      <span className="font-mono text-xs font-medium text-slate-800">
                         {p.normalizedPhone}
                       </span>
                       {p.isPrimary && (
-                        <Badge className="bg-indigo-950 text-indigo-300 border-indigo-800 text-[10px] px-1.5 py-0 h-4">
+                        <Badge className="bg-indigo-50 text-indigo-700 border-indigo-200 text-[10px] px-1.5 py-0 h-4">
                           Primary
                         </Badge>
                       )}
@@ -491,12 +541,32 @@ export function CustomerDetail({ customerId }: CustomerDetailProps) {
                   </div>
 
                   <div className="flex items-center gap-1">
+                    {getTelUrl(p.normalizedPhone || p.rawPhone) && (
+                      <a
+                        href={getTelUrl(p.normalizedPhone || p.rawPhone)!}
+                        className="p-1 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 rounded transition"
+                        title="Direct Call"
+                      >
+                        <Phone className="h-3.5 w-3.5" />
+                      </a>
+                    )}
+                    {getWhatsAppUrl(p.normalizedPhone || p.rawPhone) && (
+                      <a
+                        href={getWhatsAppUrl(p.normalizedPhone || p.rawPhone)!}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="p-1 text-green-600 hover:text-green-700 hover:bg-green-50 rounded transition"
+                        title="WhatsApp Chat"
+                      >
+                        <MessageSquare className="h-3.5 w-3.5" />
+                      </a>
+                    )}
                     {!p.isPrimary && (
                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={() => handleSetPrimaryPhone(p.id)}
-                        className="h-6 px-1.5 text-[11px] text-slate-400 hover:text-amber-400 hover:bg-slate-900"
+                        className="h-6 px-1.5 text-[11px] text-slate-400 hover:text-amber-600 hover:bg-amber-50"
                         title="Set as primary phone"
                       >
                         <Star className="h-3 w-3" />
@@ -507,7 +577,7 @@ export function CustomerDetail({ customerId }: CustomerDetailProps) {
                         variant="ghost"
                         size="sm"
                         onClick={() => handleDeletePhone(p.id)}
-                        className="h-6 px-1.5 text-[11px] text-slate-400 hover:text-rose-400 hover:bg-slate-900"
+                        className="h-6 px-1.5 text-[11px] text-slate-400 hover:text-rose-600 hover:bg-rose-50"
                         title="Remove phone"
                       >
                         <Trash2 className="h-3 w-3" />
@@ -520,36 +590,36 @@ export function CustomerDetail({ customerId }: CustomerDetailProps) {
           </div>
 
           {/* Emails Card */}
-          <div className="rounded-lg border border-slate-800 bg-slate-950/70 p-5 shadow-sm space-y-3">
+          <div className="rounded-lg border border-slate-200/90 bg-white p-5 shadow-xs space-y-3">
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-white flex items-center gap-2">
-                <Mail className="h-4 w-4 text-indigo-400" />
+              <h3 className="text-sm font-semibold text-slate-900 flex items-center gap-2">
+                <Mail className="h-4 w-4 text-indigo-600" />
                 Email Addresses ({customer.emails.length})
               </h3>
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => setAddEmailOpen(true)}
-                className="h-7 text-xs text-indigo-400 hover:text-indigo-300 hover:bg-indigo-950/40 px-2"
+                className="h-7 text-xs text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 px-2 font-medium"
               >
                 <Plus className="h-3 w-3 mr-1" />
                 Add
               </Button>
             </div>
 
-            <div className="divide-y divide-slate-800/60">
+            <div className="divide-y divide-slate-100">
               {customer.emails.length === 0 ? (
-                <p className="text-xs text-slate-500 py-2 italic">No emails registered</p>
+                <p className="text-xs text-slate-400 py-2 italic">No emails registered</p>
               ) : (
                 customer.emails.map((e) => (
                   <div key={e.id} className="py-2.5 flex items-center justify-between gap-2">
                     <div className="truncate">
                       <div className="flex items-center gap-2">
-                        <span className="text-xs text-slate-200 truncate">
+                        <span className="text-xs text-slate-700 truncate">
                           {e.email}
                         </span>
                         {e.isPrimary && (
-                          <Badge className="bg-indigo-950 text-indigo-300 border-indigo-800 text-[10px] px-1.5 py-0 h-4">
+                          <Badge className="bg-indigo-50 text-indigo-700 border-indigo-200 text-[10px] px-1.5 py-0 h-4">
                             Primary
                           </Badge>
                         )}
@@ -560,12 +630,21 @@ export function CustomerDetail({ customerId }: CustomerDetailProps) {
                     </div>
 
                     <div className="flex items-center gap-1 shrink-0">
+                      {getMailtoUrl(e.email) && (
+                        <a
+                          href={getMailtoUrl(e.email)!}
+                          className="p-1 text-sky-600 hover:text-sky-700 hover:bg-sky-50 rounded transition"
+                          title="Send Email"
+                        >
+                          <Mail className="h-3.5 w-3.5" />
+                        </a>
+                      )}
                       {!e.isPrimary && (
                         <Button
                           variant="ghost"
                           size="sm"
                           onClick={() => handleSetPrimaryEmail(e.id)}
-                          className="h-6 px-1.5 text-[11px] text-slate-400 hover:text-amber-400 hover:bg-slate-900"
+                          className="h-6 px-1.5 text-[11px] text-slate-400 hover:text-amber-600 hover:bg-amber-50"
                           title="Set as primary email"
                         >
                           <Star className="h-3 w-3" />
@@ -575,7 +654,7 @@ export function CustomerDetail({ customerId }: CustomerDetailProps) {
                         variant="ghost"
                         size="sm"
                         onClick={() => handleDeleteEmail(e.id)}
-                        className="h-6 px-1.5 text-[11px] text-slate-400 hover:text-rose-400 hover:bg-slate-900"
+                        className="h-6 px-1.5 text-[11px] text-slate-400 hover:text-rose-600 hover:bg-rose-50"
                         title="Remove email"
                       >
                         <Trash2 className="h-3 w-3" />
@@ -588,38 +667,83 @@ export function CustomerDetail({ customerId }: CustomerDetailProps) {
           </div>
         </div>
 
-        {/* Right Column: Authorized Enquiries Workspace */}
+        {/* Right Column: Authorized Enquiries / Deals Workspace */}
         <div className="space-y-4 lg:col-span-2">
-          <div className="rounded-lg border border-slate-800 bg-slate-950/70 p-5 shadow-sm space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800/80 pb-4">
+          {/* Sales & Deals Summary Cards */}
+          {(() => {
+            const totalDealValue = enquiries.reduce(
+              (acc, curr) => acc + (curr.amount ? Number(curr.amount) : 0),
+              0
+            );
+            const activeDealsCount = enquiries.filter(
+              (e) => e.status?.name !== "Converted" && e.status?.name !== "Closed Lost"
+            ).length;
+            const wonDealsCount = enquiries.filter(
+              (e) => e.status?.name === "Converted" || e.status?.name === "Won"
+            ).length;
+
+            return (
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                <div className="rounded-lg border border-slate-200/90 bg-white p-3.5 space-y-1 shadow-xs">
+                  <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                    <DollarSign className="h-3.5 w-3.5 text-emerald-600" /> Total Deal Value
+                  </span>
+                  <div className="text-lg font-bold text-slate-900 font-mono">
+                    ₹{totalDealValue.toLocaleString("en-IN")}
+                  </div>
+                </div>
+
+                <div className="rounded-lg border border-slate-200/90 bg-white p-3.5 space-y-1 shadow-xs">
+                  <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                    <TrendingUp className="h-3.5 w-3.5 text-indigo-600" /> Active Deals
+                  </span>
+                  <div className="text-lg font-bold text-indigo-600">
+                    {activeDealsCount}
+                  </div>
+                </div>
+
+                <div className="rounded-lg border border-slate-200/90 bg-white p-3.5 space-y-1 col-span-2 sm:col-span-1 shadow-xs">
+                  <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                    <CheckCircle2 className="h-3.5 w-3.5 text-violet-600" /> Won / Converted
+                  </span>
+                  <div className="text-lg font-bold text-violet-600">
+                    {wonDealsCount}
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
+
+          <div className="rounded-lg border border-slate-200/90 bg-white p-5 shadow-xs space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
               <div>
-                <h3 className="text-base font-bold text-white flex items-center gap-2">
-                  <span>Authorized Enquiries</span>
-                  <Badge className="bg-indigo-600/30 text-indigo-300 border-indigo-500/40 text-xs">
+                <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                  <span>Customer Deals & Enquiries</span>
+                  <Badge className="bg-indigo-50 text-indigo-700 border-indigo-200 text-xs">
                     {enquiryPagination.total} Total
                   </Badge>
                 </h3>
-                <p className="text-xs text-slate-400 mt-0.5">
-                  Filtered according to your RBAC and Data Scope assignment.
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Commercial sales pipeline opportunities associated with this customer profile.
                 </p>
               </div>
 
-              <Link href={`/app/leads`}>
-                <Button size="sm" variant="outline" className="border-slate-700 hover:bg-slate-800 text-xs">
+              <Link href={`/app/leads/new`}>
+                <Button size="sm" variant="outline" className="border-slate-200 hover:bg-slate-50 text-slate-700 text-xs shadow-xs">
                   <Plus className="h-3.5 w-3.5 mr-1" />
-                  New Enquiry
+                  New Deal / Enquiry
                 </Button>
               </Link>
             </div>
 
             {enquiries.length === 0 ? (
-              <div className="py-16 text-center text-slate-500 text-sm">
+              <div className="py-16 text-center text-slate-400 text-sm">
                 <p>No enquiries found under your authorized data scope for this customer.</p>
               </div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs">
-                  <thead className="border-b border-slate-800 text-slate-400 uppercase font-medium">
+                  <thead className="border-b border-slate-200/90 bg-slate-50/70 text-slate-500 uppercase font-medium">
                     <tr>
                       <th className="py-2.5 px-3">Enquiry Title</th>
                       <th className="py-2.5 px-3">Status</th>
@@ -630,13 +754,13 @@ export function CustomerDetail({ customerId }: CustomerDetailProps) {
                       <th className="py-2.5 px-3 text-right">View</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-800/60 text-slate-300">
+                  <tbody className="divide-y divide-slate-100 text-slate-700">
                     {enquiries.map((enq) => (
-                      <tr key={enq.id} className="hover:bg-slate-900/40 transition-colors">
-                        <td className="py-2.5 px-3 font-semibold text-white">
+                      <tr key={enq.id} className="hover:bg-slate-50/70 transition-colors">
+                        <td className="py-2.5 px-3 font-semibold text-slate-900">
                           <Link
                             href={`/app/leads/${enq.id}`}
-                            className="hover:text-indigo-400 transition-colors"
+                            className="hover:text-indigo-600 transition-colors"
                           >
                             {enq.name}
                           </Link>
@@ -646,44 +770,35 @@ export function CustomerDetail({ customerId }: CustomerDetailProps) {
                             <span
                               className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium"
                               style={{
-                                backgroundColor: `${enq.status.color}20`,
+                                backgroundColor: `${enq.status.color}15`,
                                 color: enq.status.color,
                               }}
                             >
                               {enq.status.name}
                             </span>
                           ) : (
-                            <span className="text-slate-600">—</span>
+                            <span className="text-slate-400">—</span>
                           )}
                         </td>
-                        <td className="py-2.5 px-3 text-slate-300">
-                          {enq.assignedUser?.name || <span className="text-slate-600">Unassigned</span>}
+                        <td className="py-2.5 px-3 text-slate-600">
+                          {enq.assignedUser?.name || <span className="text-slate-400">Unassigned</span>}
                         </td>
                         <td className="py-2.5 px-3">
-                          <span
-                            className={`text-[10px] font-semibold ${
-                              enq.priority === "URGENT"
-                                ? "text-rose-400"
-                                : enq.priority === "HIGH"
-                                ? "text-amber-400"
-                                : "text-slate-400"
-                            }`}
-                          >
-                            {enq.priority}
-                          </span>
+                          <PriorityBadge priority={enq.priority} />
                         </td>
-                        <td className="py-2.5 px-3 font-mono text-slate-200">
-                          {enq.amount ? `$${Number(enq.amount).toLocaleString()}` : "—"}
+                        <td className="py-2.5 px-3 font-mono font-medium text-slate-800">
+                          {enq.amount ? `₹${Number(enq.amount).toLocaleString("en-IN")}` : "—"}
                         </td>
-                        <td className="py-2.5 px-3 text-slate-400">
+                        <td className="py-2.5 px-3 text-slate-500 font-mono">
                           {new Date(enq.createdAt).toLocaleDateString()}
                         </td>
                         <td className="py-2.5 px-3 text-right">
                           <Link
                             href={`/app/leads/${enq.id}`}
-                            className="text-indigo-400 hover:text-indigo-300"
+                            className="text-indigo-600 hover:text-indigo-700 font-medium inline-flex items-center gap-1"
                           >
-                            <ExternalLink className="h-3.5 w-3.5 inline" />
+                            <span>Open</span>
+                            <ExternalLink className="h-3 w-3" />
                           </Link>
                         </td>
                       </tr>
@@ -695,7 +810,7 @@ export function CustomerDetail({ customerId }: CustomerDetailProps) {
 
             {/* Enquiry Pagination */}
             {enquiryPagination.totalPages > 1 && (
-              <div className="flex items-center justify-between border-t border-slate-800/80 pt-3 text-xs text-slate-400">
+              <div className="flex items-center justify-between border-t border-slate-100 pt-3 text-xs text-slate-500">
                 <span>
                   Page {enquiryPagination.page} of {enquiryPagination.totalPages}
                 </span>
@@ -705,7 +820,7 @@ export function CustomerDetail({ customerId }: CustomerDetailProps) {
                     size="sm"
                     disabled={enquiryPage <= 1}
                     onClick={() => setEnquiryPage((p) => p - 1)}
-                    className="h-7 px-2 border-slate-800 bg-slate-900"
+                    className="h-7 px-2 border-slate-200 bg-white hover:bg-slate-50 text-slate-700"
                   >
                     <ChevronLeft className="h-3.5 w-3.5 mr-1" />
                     Prev
@@ -715,7 +830,7 @@ export function CustomerDetail({ customerId }: CustomerDetailProps) {
                     size="sm"
                     disabled={enquiryPage >= enquiryPagination.totalPages}
                     onClick={() => setEnquiryPage((p) => p + 1)}
-                    className="h-7 px-2 border-slate-800 bg-slate-900"
+                    className="h-7 px-2 border-slate-200 bg-white hover:bg-slate-50 text-slate-700"
                   >
                     Next
                     <ChevronRight className="h-3.5 w-3.5 ml-1" />
@@ -724,58 +839,63 @@ export function CustomerDetail({ customerId }: CustomerDetailProps) {
               </div>
             )}
           </div>
+
+          {/* Team Collaboration & Internal Comments */}
+          <div className="rounded-lg border border-slate-200/90 bg-white p-5 shadow-xs">
+            <CommentThread entityType="CUSTOMER" entityId={customer.id} />
+          </div>
         </div>
       </div>
 
       {/* Edit Profile Modal */}
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
-        <DialogContent className="sm:max-w-md bg-slate-950 border-slate-800 text-slate-200">
+        <DialogContent className="sm:max-w-md bg-white border-slate-200 text-slate-900 shadow-xl">
           <DialogHeader>
-            <DialogTitle className="text-lg font-bold text-white flex items-center gap-2">
-              <Edit2 className="h-4 w-4 text-indigo-400" />
+            <DialogTitle className="text-base font-bold text-slate-900 flex items-center gap-2">
+              <Edit2 className="h-4 w-4 text-indigo-600" />
               Edit Customer Profile
             </DialogTitle>
           </DialogHeader>
 
           <form onSubmit={handleUpdateProfile} className="space-y-4 pt-2">
             <div>
-              <Label className="text-xs font-semibold text-slate-300">
+              <Label className="text-xs font-semibold text-slate-700">
                 Full Name <span className="text-rose-500">*</span>
               </Label>
               <Input
                 required
                 value={editName}
                 onChange={(e) => setEditName(e.target.value)}
-                className="mt-1 bg-slate-900 border-slate-700 text-white"
+                className="mt-1 bg-slate-50/50 border-slate-200 text-slate-900"
               />
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <Label className="text-xs font-semibold text-slate-300">Display Name</Label>
+                <Label className="text-xs font-semibold text-slate-700">Display Name</Label>
                 <Input
                   value={editDisplayName}
                   onChange={(e) => setEditDisplayName(e.target.value)}
-                  className="mt-1 bg-slate-900 border-slate-700 text-white"
+                  className="mt-1 bg-slate-50/50 border-slate-200 text-slate-900"
                 />
               </div>
               <div>
-                <Label className="text-xs font-semibold text-slate-300">Organization</Label>
+                <Label className="text-xs font-semibold text-slate-700">Organization</Label>
                 <Input
                   value={editCompany}
                   onChange={(e) => setEditCompany(e.target.value)}
-                  className="mt-1 bg-slate-900 border-slate-700 text-white"
+                  className="mt-1 bg-slate-50/50 border-slate-200 text-slate-900"
                 />
               </div>
             </div>
 
             <div>
-              <Label className="text-xs font-semibold text-slate-300">Notes</Label>
+              <Label className="text-xs font-semibold text-slate-700">Notes</Label>
               <textarea
                 rows={3}
                 value={editNotes}
                 onChange={(e) => setEditNotes(e.target.value)}
-                className="mt-1 w-full rounded-md bg-slate-900 border border-slate-700 text-white text-xs p-2.5"
+                className="mt-1 w-full rounded-md bg-slate-50/50 border border-slate-200 text-slate-900 text-xs p-2.5 focus:outline-hidden focus:border-indigo-500"
               />
             </div>
 
@@ -784,14 +904,14 @@ export function CustomerDetail({ customerId }: CustomerDetailProps) {
                 type="button"
                 variant="outline"
                 onClick={() => setEditOpen(false)}
-                className="border-slate-700 text-slate-300 hover:bg-slate-800"
+                className="border-slate-200 text-slate-700 hover:bg-slate-50"
               >
                 Cancel
               </Button>
               <Button
                 type="submit"
                 disabled={savingEdit}
-                className="bg-indigo-600 hover:bg-indigo-500 text-white"
+                className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium"
               >
                 {savingEdit ? "Saving..." : "Save Changes"}
               </Button>
@@ -802,17 +922,17 @@ export function CustomerDetail({ customerId }: CustomerDetailProps) {
 
       {/* Add Phone Modal */}
       <Dialog open={addPhoneOpen} onOpenChange={setAddPhoneOpen}>
-        <DialogContent className="sm:max-w-sm bg-slate-950 border-slate-800 text-slate-200">
+        <DialogContent className="sm:max-w-sm bg-white border-slate-200 text-slate-900 shadow-xl">
           <DialogHeader>
-            <DialogTitle className="text-base font-bold text-white flex items-center gap-2">
-              <Phone className="h-4 w-4 text-indigo-400" />
+            <DialogTitle className="text-base font-bold text-slate-900 flex items-center gap-2">
+              <Phone className="h-4 w-4 text-indigo-600" />
               Add Phone Number
             </DialogTitle>
           </DialogHeader>
 
           <form onSubmit={handleAddPhone} className="space-y-4 pt-2">
             <div>
-              <Label className="text-xs font-semibold text-slate-300">
+              <Label className="text-xs font-semibold text-slate-700">
                 Phone Number <span className="text-rose-500">*</span>
               </Label>
               <Input
@@ -820,16 +940,16 @@ export function CustomerDetail({ customerId }: CustomerDetailProps) {
                 placeholder="e.g. +1 555-0199 or 9876543210"
                 value={newPhone}
                 onChange={(e) => setNewPhone(e.target.value)}
-                className="mt-1 bg-slate-900 border-slate-700 text-white font-mono text-sm"
+                className="mt-1 bg-slate-50/50 border-slate-200 text-slate-900 font-mono text-sm"
               />
             </div>
 
             <div>
-              <Label className="text-xs font-semibold text-slate-300">Type</Label>
+              <Label className="text-xs font-semibold text-slate-700">Type</Label>
               <select
                 value={newPhoneType}
                 onChange={(e) => setNewPhoneType(e.target.value as "MOBILE" | "WORK" | "HOME" | "WHATSAPP")}
-                className="mt-1 w-full h-9 rounded-md bg-slate-900 border border-slate-700 text-white text-xs px-2"
+                className="mt-1 w-full h-9 rounded-md bg-slate-50/50 border border-slate-200 text-slate-900 text-xs px-2"
               >
                 <option value="MOBILE">Mobile</option>
                 <option value="WORK">Work</option>
@@ -844,9 +964,9 @@ export function CustomerDetail({ customerId }: CustomerDetailProps) {
                 id="isPrimaryPhone"
                 checked={newPhonePrimary}
                 onChange={(e) => setNewPhonePrimary(e.target.checked)}
-                className="h-4 w-4 rounded border-slate-700 bg-slate-900 text-indigo-600 focus:ring-indigo-500"
+                className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
               />
-              <Label htmlFor="isPrimaryPhone" className="text-xs text-slate-300 cursor-pointer">
+              <Label htmlFor="isPrimaryPhone" className="text-xs text-slate-700 cursor-pointer">
                 Set as primary phone number
               </Label>
             </div>
@@ -856,14 +976,14 @@ export function CustomerDetail({ customerId }: CustomerDetailProps) {
                 type="button"
                 variant="outline"
                 onClick={() => setAddPhoneOpen(false)}
-                className="border-slate-700 text-slate-300 hover:bg-slate-800"
+                className="border-slate-200 text-slate-700 hover:bg-slate-50"
               >
                 Cancel
               </Button>
               <Button
                 type="submit"
                 disabled={addingPhone}
-                className="bg-indigo-600 hover:bg-indigo-500 text-white"
+                className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium"
               >
                 {addingPhone ? "Adding..." : "Add Phone"}
               </Button>
@@ -874,17 +994,17 @@ export function CustomerDetail({ customerId }: CustomerDetailProps) {
 
       {/* Add Email Modal */}
       <Dialog open={addEmailOpen} onOpenChange={setAddEmailOpen}>
-        <DialogContent className="sm:max-w-sm bg-slate-950 border-slate-800 text-slate-200">
+        <DialogContent className="sm:max-w-sm bg-white border-slate-200 text-slate-900 shadow-xl">
           <DialogHeader>
-            <DialogTitle className="text-base font-bold text-white flex items-center gap-2">
-              <Mail className="h-4 w-4 text-indigo-400" />
+            <DialogTitle className="text-base font-bold text-slate-900 flex items-center gap-2">
+              <Mail className="h-4 w-4 text-indigo-600" />
               Add Email Address
             </DialogTitle>
           </DialogHeader>
 
           <form onSubmit={handleAddEmail} className="space-y-4 pt-2">
             <div>
-              <Label className="text-xs font-semibold text-slate-300">
+              <Label className="text-xs font-semibold text-slate-700">
                 Email Address <span className="text-rose-500">*</span>
               </Label>
               <Input
@@ -893,16 +1013,16 @@ export function CustomerDetail({ customerId }: CustomerDetailProps) {
                 placeholder="e.g. john@example.com"
                 value={newEmail}
                 onChange={(e) => setNewEmail(e.target.value)}
-                className="mt-1 bg-slate-900 border-slate-700 text-white text-sm"
+                className="mt-1 bg-slate-50/50 border-slate-200 text-slate-900 text-sm"
               />
             </div>
 
             <div>
-              <Label className="text-xs font-semibold text-slate-300">Type</Label>
+              <Label className="text-xs font-semibold text-slate-700">Type</Label>
               <select
                 value={newEmailType}
                 onChange={(e) => setNewEmailType(e.target.value as "WORK" | "PERSONAL")}
-                className="mt-1 w-full h-9 rounded-md bg-slate-900 border border-slate-700 text-white text-xs px-2"
+                className="mt-1 w-full h-9 rounded-md bg-slate-50/50 border border-slate-200 text-slate-900 text-xs px-2"
               >
                 <option value="WORK">Work</option>
                 <option value="PERSONAL">Personal</option>
@@ -915,9 +1035,9 @@ export function CustomerDetail({ customerId }: CustomerDetailProps) {
                 id="isPrimaryEmail"
                 checked={newEmailPrimary}
                 onChange={(e) => setNewEmailPrimary(e.target.checked)}
-                className="h-4 w-4 rounded border-slate-700 bg-slate-900 text-indigo-600 focus:ring-indigo-500"
+                className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
               />
-              <Label htmlFor="isPrimaryEmail" className="text-xs text-slate-300 cursor-pointer">
+              <Label htmlFor="isPrimaryEmail" className="text-xs text-slate-700 cursor-pointer">
                 Set as primary email address
               </Label>
             </div>
@@ -927,14 +1047,14 @@ export function CustomerDetail({ customerId }: CustomerDetailProps) {
                 type="button"
                 variant="outline"
                 onClick={() => setAddEmailOpen(false)}
-                className="border-slate-700 text-slate-300 hover:bg-slate-800"
+                className="border-slate-200 text-slate-700 hover:bg-slate-50"
               >
                 Cancel
               </Button>
               <Button
                 type="submit"
                 disabled={addingEmail}
-                className="bg-indigo-600 hover:bg-indigo-500 text-white"
+                className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium"
               >
                 {addingEmail ? "Adding..." : "Add Email"}
               </Button>
@@ -945,21 +1065,21 @@ export function CustomerDetail({ customerId }: CustomerDetailProps) {
 
       {/* Delete Customer Confirmation Modal */}
       <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
-        <DialogContent className="sm:max-w-md bg-slate-950 border-rose-900/60 text-slate-200">
+        <DialogContent className="sm:max-w-md bg-white border-rose-200 text-slate-900 shadow-xl">
           <DialogHeader>
-            <DialogTitle className="text-base font-bold text-rose-400 flex items-center gap-2">
+            <DialogTitle className="text-base font-bold text-rose-600 flex items-center gap-2">
               <AlertTriangle className="h-5 w-5" />
               Soft Delete Customer
             </DialogTitle>
           </DialogHeader>
 
-          <div className="space-y-3 py-2 text-sm text-slate-300">
+          <div className="space-y-3 py-2 text-sm text-slate-700">
             <p>
               Are you sure you want to delete customer{" "}
-              <strong className="text-white">{customer.name}</strong>?
+              <strong className="text-slate-900">{customer.name}</strong>?
             </p>
-            <div className="p-3 bg-slate-900/80 rounded-md border border-slate-800 text-xs text-slate-400 space-y-1">
-              <p className="font-semibold text-slate-300">Safety Guarantee:</p>
+            <div className="p-3 bg-slate-50 rounded-md border border-slate-200 text-xs text-slate-600 space-y-1">
+              <p className="font-semibold text-slate-800">Safety Guarantee:</p>
               <p>
                 Deleting this customer identity will <strong>NOT</strong> delete any enquiries,
                 activities, tasks, or audit logs. Historical business records will remain completely intact.
@@ -972,15 +1092,15 @@ export function CustomerDetail({ customerId }: CustomerDetailProps) {
               type="button"
               variant="outline"
               onClick={() => setDeleteOpen(false)}
-              className="border-slate-700 text-slate-300 hover:bg-slate-800"
+              className="border-slate-200 text-slate-700 hover:bg-slate-50"
             >
               Cancel
             </Button>
             <Button
-              type="button"
+              type="submit"
               disabled={deleting}
               onClick={handleDeleteCustomer}
-              className="bg-rose-600 hover:bg-rose-500 text-white"
+              className="bg-rose-600 hover:bg-rose-700 text-white font-medium"
             >
               {deleting ? "Deleting..." : "Confirm Soft Delete"}
             </Button>

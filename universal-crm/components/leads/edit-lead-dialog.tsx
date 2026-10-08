@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Edit2, Loader2, AlertCircle } from "lucide-react";
-import { LeadCustomFieldsInput } from "@/components/leads/lead-custom-fields-input";
+import { LeadCustomFieldsInput } from "./lead-custom-fields-input";
 
 interface EditLeadDialogProps {
   lead: {
@@ -15,99 +15,96 @@ interface EditLeadDialogProps {
     email: string | null;
     phone: string | null;
     company: string | null;
-    amount: number | string | null;
+    amount: any;
     priority: "LOW" | "MEDIUM" | "HIGH" | "URGENT";
     sourceId: string | null;
     teamId: string | null;
   };
   sources: Array<{ id: string; name: string }>;
-  teams: Array<{ id: string; name: string }>;
-  onUpdated?: () => void;
+  teams?: Array<{ id: string; name: string }>;
 }
 
-export function EditLeadDialog({
-  lead,
-  sources,
-  teams,
-  onUpdated,
-}: EditLeadDialogProps) {
+export function EditLeadDialog({ lead, sources, teams = [] }: EditLeadDialogProps) {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Form state initialized from props
   const [name, setName] = useState(lead.name);
   const [email, setEmail] = useState(lead.email || "");
   const [phone, setPhone] = useState(lead.phone || "");
   const [company, setCompany] = useState(lead.company || "");
   const [amount, setAmount] = useState(lead.amount ? String(lead.amount) : "");
-  const [priority, setPriority] = useState<"LOW" | "MEDIUM" | "HIGH" | "URGENT">(lead.priority);
+  const [priority, setPriority] = useState(lead.priority);
   const [sourceId, setSourceId] = useState(lead.sourceId || "");
   const [teamId, setTeamId] = useState(lead.teamId || "");
-  const [customFields, setCustomFields] = useState<Record<string, unknown>>({});
+  const [customFields, setCustomFields] = useState<Record<string, any>>({});
 
   const handleOpen = async () => {
     setIsOpen(true);
     try {
       const res = await fetch(`/api/v1/leads/${lead.id}/custom-fields`);
-      if (res.ok) {
-        const json = await res.json();
-        const initialMap: Record<string, unknown> = {};
-        for (const item of json.data || []) {
-          if (item.value !== null && item.value !== undefined) {
-            initialMap[item.field.key] = item.value;
-          }
-        }
-        setCustomFields(initialMap);
+      const data = await res.json();
+      if (data.success && data.data) {
+        setCustomFields(data.data);
       }
     } catch {
-      // Ignore
+      // Quiet fail if custom fields couldn't load initially
     }
   };
 
-  async function handleSubmit(e: React.FormEvent) {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim()) {
-      setError("Name is required");
-      return;
-    }
-
     setIsLoading(true);
     setError(null);
 
     try {
+      const payload: any = {
+        name: name.trim(),
+        email: email.trim() || null,
+        phone: phone.trim() || null,
+        company: company.trim() || null,
+        amount: amount ? parseFloat(amount) : null,
+        priority,
+        sourceId: sourceId || null,
+        teamId: teamId || null,
+      };
+
+      // 1. Update core lead record
       const res = await fetch(`/api/v1/leads/${lead.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: name.trim(),
-          email: email.trim() || null,
-          phone: phone.trim() || null,
-          company: company.trim() || null,
-          amount: amount ? parseFloat(amount) : null,
-          priority,
-          sourceId: sourceId || null,
-          teamId: teamId || null,
-          customFields: Object.keys(customFields).length > 0 ? customFields : undefined,
-        }),
+        body: JSON.stringify(payload),
       });
 
       const data = await res.json();
-      if (!res.ok) {
-        setError(data.error?.message || "Failed to update lead");
-        setIsLoading(false);
-        return;
+
+      if (!res.ok || !data.success) {
+        throw new Error(data.error?.message || "Failed to update lead");
+      }
+
+      // 2. Update custom field values if present
+      if (Object.keys(customFields).length > 0) {
+        const cfRes = await fetch(`/api/v1/leads/${lead.id}/custom-fields`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ customFields }),
+        });
+        const cfData = await cfRes.json();
+        if (!cfRes.ok || !cfData.success) {
+          throw new Error(cfData.error?.message || "Lead updated, but custom fields failed to save.");
+        }
       }
 
       setIsOpen(false);
-      onUpdated?.();
       router.refresh();
-    } catch {
-      setError("An unexpected error occurred");
+    } catch (err: any) {
+      setError(err.message || "An unexpected error occurred");
     } finally {
       setIsLoading(false);
     }
-  }
+  };
 
   return (
     <>
@@ -126,54 +123,54 @@ export function EditLeadDialog({
           setError(null);
           handleOpen();
         }}
-        className="h-8 w-8 p-0 text-slate-400 hover:text-indigo-400 hover:bg-indigo-500/10"
+        className="h-8 w-8 p-0 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50"
         title="Edit Lead"
       >
         <Edit2 className="h-3.5 w-3.5" />
       </Button>
 
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-150">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-2xs animate-in fade-in duration-150">
           <div
-            className="w-full max-w-lg rounded-xl border border-slate-800 bg-slate-900 p-6 shadow-2xl space-y-5 animate-in zoom-in-95 duration-150"
+            className="w-full max-w-lg rounded-xl border border-slate-200 bg-white p-6 shadow-2xl space-y-5 animate-in zoom-in-95 duration-150"
             role="dialog"
             aria-modal="true"
           >
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <h2 className="text-base font-semibold text-white">Edit Lead Details</h2>
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h2 className="text-base font-semibold text-slate-900">Edit Lead Details</h2>
               <button
                 type="button"
                 onClick={() => setIsOpen(false)}
-                className="text-slate-400 hover:text-white text-xs px-2 py-1 rounded"
+                className="text-slate-400 hover:text-slate-700 text-xs px-2 py-1 rounded transition"
               >
                 ✕
               </button>
             </div>
 
             {error && (
-              <div className="flex items-center gap-2 p-3 text-xs rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-300">
-                <AlertCircle className="h-4 w-4 shrink-0 text-rose-400" />
+              <div className="flex items-center gap-2 p-3 text-xs rounded-lg bg-rose-50 border border-rose-200 text-rose-700">
+                <AlertCircle className="h-4 w-4 shrink-0 text-rose-600" />
                 <span>{error}</span>
               </div>
             )}
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-1.5">
-                <Label htmlFor="edit-name" className="text-xs text-slate-300">
-                  Lead Name <span className="text-rose-400">*</span>
+                <Label htmlFor="edit-name" className="text-xs text-slate-700 font-medium">
+                  Lead Name <span className="text-rose-500">*</span>
                 </Label>
                 <Input
                   id="edit-name"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   required
-                  className="bg-slate-950 border-slate-800 text-xs text-slate-100 h-9"
+                  className="bg-slate-50/50 border-slate-200 text-xs text-slate-900 h-9 focus-visible:ring-indigo-500"
                 />
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <Label htmlFor="edit-email" className="text-xs text-slate-300">
+                  <Label htmlFor="edit-email" className="text-xs text-slate-700 font-medium">
                     Email
                   </Label>
                   <Input
@@ -181,37 +178,37 @@ export function EditLeadDialog({
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="bg-slate-950 border-slate-800 text-xs text-slate-100 h-9"
+                    className="bg-slate-50/50 border-slate-200 text-xs text-slate-900 h-9 focus-visible:ring-indigo-500"
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="edit-phone" className="text-xs text-slate-300">
+                  <Label htmlFor="edit-phone" className="text-xs text-slate-700 font-medium">
                     Phone
                   </Label>
                   <Input
                     id="edit-phone"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
-                    className="bg-slate-950 border-slate-800 text-xs text-slate-100 h-9"
+                    className="bg-slate-50/50 border-slate-200 text-xs text-slate-900 h-9 font-mono focus-visible:ring-indigo-500"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <Label htmlFor="edit-company" className="text-xs text-slate-300">
+                  <Label htmlFor="edit-company" className="text-xs text-slate-700 font-medium">
                     Organization / Company
                   </Label>
                   <Input
                     id="edit-company"
                     value={company}
                     onChange={(e) => setCompany(e.target.value)}
-                    className="bg-slate-950 border-slate-800 text-xs text-slate-100 h-9"
+                    className="bg-slate-50/50 border-slate-200 text-xs text-slate-900 h-9 focus-visible:ring-indigo-500"
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="edit-amount" className="text-xs text-slate-300">
-                    Deal Amount ($)
+                  <Label htmlFor="edit-amount" className="text-xs text-slate-700 font-medium">
+                    Deal Amount (₹)
                   </Label>
                   <Input
                     id="edit-amount"
@@ -220,21 +217,21 @@ export function EditLeadDialog({
                     min="0"
                     value={amount}
                     onChange={(e) => setAmount(e.target.value)}
-                    className="bg-slate-950 border-slate-800 text-xs text-slate-100 h-9"
+                    className="bg-slate-50/50 border-slate-200 text-xs text-slate-900 h-9 font-mono focus-visible:ring-indigo-500"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <Label htmlFor="edit-priority" className="text-xs text-slate-300">
+                  <Label htmlFor="edit-priority" className="text-xs text-slate-700 font-medium">
                     Priority
                   </Label>
                   <select
                     id="edit-priority"
                     value={priority}
                     onChange={(e) => setPriority(e.target.value as "LOW" | "MEDIUM" | "HIGH" | "URGENT")}
-                    className="w-full h-9 rounded-lg border border-slate-800 bg-slate-950 px-2.5 text-xs text-slate-200 outline-none focus:border-indigo-500"
+                    className="w-full h-9 rounded-lg border border-slate-200 bg-slate-50/50 px-2.5 text-xs text-slate-900 outline-hidden focus:border-indigo-500"
                   >
                     <option value="LOW">Low</option>
                     <option value="MEDIUM">Medium</option>
@@ -244,14 +241,14 @@ export function EditLeadDialog({
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label htmlFor="edit-source" className="text-xs text-slate-300">
+                  <Label htmlFor="edit-source" className="text-xs text-slate-700 font-medium">
                     Source
                   </Label>
                   <select
                     id="edit-source"
                     value={sourceId}
                     onChange={(e) => setSourceId(e.target.value)}
-                    className="w-full h-9 rounded-lg border border-slate-800 bg-slate-950 px-2.5 text-xs text-slate-200 outline-none focus:border-indigo-500"
+                    className="w-full h-9 rounded-lg border border-slate-200 bg-slate-50/50 px-2.5 text-xs text-slate-900 outline-hidden focus:border-indigo-500"
                   >
                     <option value="">No Source</option>
                     {sources.map((src) => (
@@ -265,14 +262,14 @@ export function EditLeadDialog({
 
               {teams.length > 0 && (
                 <div className="space-y-1.5">
-                  <Label htmlFor="edit-team" className="text-xs text-slate-300">
+                  <Label htmlFor="edit-team" className="text-xs text-slate-700 font-medium">
                     Team (optional)
                   </Label>
                   <select
                     id="edit-team"
                     value={teamId}
                     onChange={(e) => setTeamId(e.target.value)}
-                    className="w-full h-9 rounded-lg border border-slate-800 bg-slate-950 px-2.5 text-xs text-slate-200 outline-none focus:border-indigo-500"
+                    className="w-full h-9 rounded-lg border border-slate-200 bg-slate-50/50 px-2.5 text-xs text-slate-900 outline-hidden focus:border-indigo-500"
                   >
                     <option value="">No Team Assigned</option>
                     {teams.map((t) => (
@@ -291,13 +288,13 @@ export function EditLeadDialog({
                 disabled={isLoading}
               />
 
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-800">
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
                   onClick={() => setIsOpen(false)}
-                  className="border-slate-800 text-xs text-slate-400 hover:text-white"
+                  className="border-slate-200 text-xs text-slate-700 hover:bg-slate-50"
                 >
                   Cancel
                 </Button>
@@ -305,7 +302,7 @@ export function EditLeadDialog({
                   type="submit"
                   disabled={isLoading}
                   size="sm"
-                  className="bg-indigo-600 hover:bg-indigo-500 text-xs text-white"
+                  className="bg-indigo-600 hover:bg-indigo-700 text-xs text-white font-medium shadow-xs"
                 >
                   {isLoading ? (
                     <>

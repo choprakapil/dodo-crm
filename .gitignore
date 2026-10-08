@@ -36,6 +36,13 @@ universal-crm/.vercel
 .DS_Store
 **/.DS_Store
 
+# Local uploads & logs
+universal-crm/uploads/
+universal-crm/logs/
+/backups/
+universal-crm/backups/
+*.log
+
 # Editor
 .vscode/
 .idea/

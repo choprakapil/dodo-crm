@@ -146,16 +146,16 @@ export function AnalyticsDashboard({
 
       {/* Error state with retry */}
       {error && (
-        <div className="p-4 rounded-xl border border-rose-500/30 bg-rose-500/10 flex items-center justify-between gap-4 text-rose-300">
-          <div className="flex items-center gap-2.5 text-xs">
-            <AlertCircle className="h-4 w-4 text-rose-400 shrink-0" />
+        <div className="p-4 rounded-xl border border-rose-200 bg-rose-50 flex items-center justify-between gap-4 text-rose-800 shadow-2xs">
+          <div className="flex items-center gap-2.5 text-xs font-medium">
+            <AlertCircle className="h-4 w-4 text-rose-600 shrink-0" />
             <span>{error}</span>
           </div>
           <Button
             onClick={fetchOverview}
             variant="outline"
             size="sm"
-            className="h-7 px-2.5 text-xs border-rose-500/30 bg-rose-950/40 hover:bg-rose-900/60 text-rose-200"
+            className="h-7 px-2.5 text-xs border-rose-300 bg-white hover:bg-rose-100 text-rose-800"
           >
             <RotateCcw className="h-3 w-3 mr-1" />
             Retry
@@ -163,14 +163,14 @@ export function AnalyticsDashboard({
         </div>
       )}
 
-      {/* 6 Core KPI Cards */}
+      {/* 6 Core KPI Cards with restrained semantic color system */}
       <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3 sm:gap-4">
         <KpiCard
           title="Total Leads"
           value={data?.kpis.totalLeads ?? 0}
           icon={Users}
-          iconColor="text-indigo-400"
-          iconBg="bg-indigo-500/10 border-indigo-500/20"
+          iconColor="text-indigo-600"
+          iconBg="bg-indigo-50 border-indigo-200/80"
           subtitle="Accessible in scope"
           loading={loading && !data}
         />
@@ -181,8 +181,8 @@ export function AnalyticsDashboard({
           changePercent={data?.kpis.newLeads.changePercent}
           previousValue={data?.kpis.newLeads.previous}
           icon={UserPlus}
-          iconColor="text-blue-400"
-          iconBg="bg-blue-500/10 border-blue-500/20"
+          iconColor="text-blue-600"
+          iconBg="bg-blue-50 border-blue-200/80"
           loading={loading && !data}
         />
 
@@ -192,8 +192,8 @@ export function AnalyticsDashboard({
           changePercent={data?.kpis.convertedLeads.changePercent}
           previousValue={data?.kpis.convertedLeads.previous}
           icon={Trophy}
-          iconColor="text-emerald-400"
-          iconBg="bg-emerald-500/10 border-emerald-500/20"
+          iconColor="text-emerald-600"
+          iconBg="bg-emerald-50 border-emerald-200/80"
           loading={loading && !data}
         />
 
@@ -203,8 +203,8 @@ export function AnalyticsDashboard({
           changePercent={data?.kpis.conversionRate.changePercent}
           previousValue={`${data?.kpis.conversionRate.previous ?? 0}%`}
           icon={Percent}
-          iconColor="text-purple-400"
-          iconBg="bg-purple-500/10 border-purple-500/20"
+          iconColor="text-purple-600"
+          iconBg="bg-purple-50 border-purple-200/80"
           loading={loading && !data}
         />
 
@@ -214,8 +214,8 @@ export function AnalyticsDashboard({
           changePercent={data?.kpis.pipelineValue.changePercent}
           previousValue={formatCurrency(data?.kpis.pipelineValue.previous ?? 0)}
           icon={DollarSign}
-          iconColor="text-amber-400"
-          iconBg="bg-amber-500/10 border-amber-500/20"
+          iconColor="text-emerald-600"
+          iconBg="bg-emerald-50 border-emerald-200/80"
           loading={loading && !data}
         />
 
@@ -224,8 +224,8 @@ export function AnalyticsDashboard({
           value={data?.kpis.followUpsDue.dueInPeriod ?? 0}
           subtitle={`${data?.kpis.followUpsDue.overdue ?? 0} overdue · ${data?.kpis.followUpsDue.pending ?? 0} pending`}
           icon={Clock}
-          iconColor="text-rose-400"
-          iconBg="bg-rose-500/10 border-rose-500/20"
+          iconColor="text-amber-600"
+          iconBg="bg-amber-50 border-amber-200/80"
           loading={loading && !data}
         />
       </div>

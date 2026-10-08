@@ -99,9 +99,9 @@ export class FollowUpService {
       where.AND = [
         {
           OR: [
-            { title: { contains: search, mode: "insensitive" } },
-            { description: { contains: search, mode: "insensitive" } },
-            { lead: { name: { contains: search, mode: "insensitive" } } },
+            { title: { contains: search } },
+            { description: { contains: search } },
+            { lead: { name: { contains: search } } },
           ],
         },
       ];
@@ -692,36 +692,35 @@ export class FollowUpService {
    * GENERAL tasks are never processed.
    */
   static async syncOverdueFollowUps(companyId?: string) {
-    // 1. Atomic PostgreSQL UPDATE ... RETURNING
-    // Exactly one state transition, exactly one MARKED_OVERDUE history per overdue task
-    const updatedTasks: Array<{
-      id: string;
-      companyId: string;
-      leadId: string | null;
-      dueAt: Date | null;
-    }> = companyId
-      ? await prisma.$queryRaw`
-          UPDATE "tasks"
-          SET "status" = 'OVERDUE'::"TaskStatus",
-              "updatedAt" = NOW()
-          WHERE "type" = 'FOLLOW_UP'::"TaskType"
-            AND "status" = 'PENDING'::"TaskStatus"
-            AND "dueAt" < NOW()
-            AND "companyId" = ${companyId}
-          RETURNING "id", "companyId", "leadId", "dueAt"
-        `
-      : await prisma.$queryRaw`
-          UPDATE "tasks"
-          SET "status" = 'OVERDUE'::"TaskStatus",
-              "updatedAt" = NOW()
-          WHERE "type" = 'FOLLOW_UP'::"TaskType"
-            AND "status" = 'PENDING'::"TaskStatus"
-            AND "dueAt" < NOW()
-          RETURNING "id", "companyId", "leadId", "dueAt"
-        `;
+    // 1. Atomic cross-dialect query for overdue PENDING follow-ups
+    const updatedTasks = await prisma.task.findMany({
+      where: {
+        type: TaskType.FOLLOW_UP,
+        status: TaskStatus.PENDING,
+        dueAt: { lt: new Date() },
+        ...(companyId ? { companyId } : {}),
+      },
+      select: {
+        id: true,
+        companyId: true,
+        leadId: true,
+        dueAt: true,
+      },
+    });
 
-    // 2. For returned rows only, append MARKED_OVERDUE history
     if (updatedTasks.length > 0) {
+      await prisma.task.updateMany({
+        where: {
+          id: { in: updatedTasks.map((t) => t.id) },
+          status: TaskStatus.PENDING,
+        },
+        data: {
+          status: TaskStatus.OVERDUE,
+          updatedAt: new Date(),
+        },
+      });
+
+      // 2. Append MARKED_OVERDUE history
       await prisma.taskRescheduleHistory.createMany({
         data: updatedTasks.map((task) => ({
           taskId: task.id,
@@ -827,6 +826,23 @@ export class FollowUpService {
       completedAt = null;
       completedById = null;
     } else if (input.status === TaskStatus.PENDING && existing.status !== TaskStatus.PENDING) {
+      const targetLeadId = input.leadId || existing.leadId;
+      if (targetLeadId) {
+        const activeFollowUp = await prisma.task.findFirst({
+          where: {
+            companyId: ctx.company.id,
+            leadId: targetLeadId,
+            type: TaskType.FOLLOW_UP,
+            status: { in: [TaskStatus.PENDING, TaskStatus.OVERDUE] },
+            id: { not: existing.id },
+          },
+        });
+        if (activeFollowUp) {
+          throw new ValidationError(
+            "Unique constraint violation: tasks_single_active_followup_per_lead_idx: An active follow-up already exists for this lead"
+          );
+        }
+      }
       completedAt = null;
       completedById = null;
       cancelledAt = null;

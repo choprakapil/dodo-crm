@@ -157,17 +157,17 @@ export function RoleBuilderDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl bg-slate-900 border-slate-800 text-slate-100 max-h-[90vh] flex flex-col">
+      <DialogContent className="sm:max-w-2xl bg-white border-slate-200 text-slate-900 max-h-[90vh] flex flex-col shadow-xl">
         <DialogHeader>
           <div className="flex items-center space-x-2">
-            <div className="p-2 rounded-lg bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+            <div className="p-2 rounded-lg bg-indigo-50 text-indigo-600 border border-indigo-100">
               <Shield className="h-5 w-5" />
             </div>
             <div>
-              <DialogTitle className="text-lg font-semibold text-slate-100">
+              <DialogTitle className="text-lg font-semibold text-slate-900">
                 {role ? `Edit Role: ${role.name}` : "Create Custom Role"}
               </DialogTitle>
-              <DialogDescription className="text-xs text-slate-400">
+              <DialogDescription className="text-xs text-slate-500">
                 Define role identity and configure granular permissions with explicit data scopes.
               </DialogDescription>
             </div>
@@ -176,15 +176,15 @@ export function RoleBuilderDialog({
 
         <form onSubmit={handleSave} className="space-y-4 flex-1 overflow-y-auto pr-1 py-2">
           {error && (
-            <div className="p-2.5 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs">
+            <div className="p-2.5 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-xs">
               {error}
             </div>
           )}
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label htmlFor="role-name" className="text-xs text-slate-300">
-                Role Name <span className="text-rose-400">*</span>
+              <Label htmlFor="role-name" className="text-xs text-slate-700 font-medium">
+                Role Name <span className="text-rose-500">*</span>
               </Label>
               <Input
                 id="role-name"
@@ -193,17 +193,17 @@ export function RoleBuilderDialog({
                 onChange={(e) => setName(e.target.value)}
                 disabled={role?.isSystem}
                 required
-                className="bg-slate-950 border-slate-800 text-xs text-slate-100"
+                className="bg-white border-slate-200 text-xs text-slate-900 placeholder:text-slate-400 focus-visible:ring-indigo-500"
               />
               {role?.isSystem && (
-                <p className="text-[10px] text-slate-500">
+                <p className="text-[10px] text-slate-400">
                   System role names cannot be altered.
                 </p>
               )}
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="role-desc" className="text-xs text-slate-300">
+              <Label htmlFor="role-desc" className="text-xs text-slate-700 font-medium">
                 Description (Optional)
               </Label>
               <Input
@@ -211,7 +211,7 @@ export function RoleBuilderDialog({
                 placeholder="Brief summary of responsibilities..."
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                className="bg-slate-950 border-slate-800 text-xs text-slate-100"
+                className="bg-white border-slate-200 text-xs text-slate-900 placeholder:text-slate-400 focus-visible:ring-indigo-500"
               />
             </div>
           </div>
@@ -219,10 +219,10 @@ export function RoleBuilderDialog({
           {/* Permissions Matrix */}
           <div className="space-y-2 pt-2">
             <div className="flex items-center justify-between">
-              <Label className="text-xs font-semibold text-slate-200">
+              <Label className="text-xs font-semibold text-slate-900">
                 Permission Matrix ({selectedPermissions.length} selected)
               </Label>
-              <Badge variant="outline" className="border-indigo-500/30 text-indigo-400 bg-indigo-500/10 text-[10px]">
+              <Badge variant="outline" className="border-indigo-200 text-indigo-700 bg-indigo-50 text-[10px]">
                 module.action + scope
               </Badge>
             </div>
@@ -231,10 +231,10 @@ export function RoleBuilderDialog({
               {SYSTEM_MODULES.map((mod) => (
                 <div
                   key={mod.module}
-                  className="p-3.5 rounded-xl bg-slate-950 border border-slate-800/80 space-y-2.5"
+                  className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-2.5"
                 >
-                  <div className="flex items-center justify-between border-b border-slate-800/60 pb-2">
-                    <span className="text-xs font-bold text-slate-200 uppercase tracking-wide">
+                  <div className="flex items-center justify-between border-b border-slate-200 pb-2">
+                    <span className="text-xs font-bold text-slate-800 uppercase tracking-wide">
                       {mod.label}
                     </span>
                     <span className="text-[10px] font-mono text-slate-500">
@@ -251,8 +251,8 @@ export function RoleBuilderDialog({
                           key={act}
                           className={`p-2 rounded-lg border text-xs transition flex flex-col justify-between space-y-1.5 ${
                             enabled
-                              ? "bg-slate-900 border-indigo-500/40 text-slate-100"
-                              : "bg-slate-950 border-slate-800/60 text-slate-400"
+                              ? "bg-white border-indigo-300 text-slate-900 shadow-2xs"
+                              : "bg-white/60 border-slate-200 text-slate-500"
                           }`}
                         >
                           <label className="flex items-center space-x-2 cursor-pointer select-none">
@@ -260,7 +260,7 @@ export function RoleBuilderDialog({
                               type="checkbox"
                               checked={enabled}
                               onChange={() => togglePerm(mod.module, act)}
-                              className="rounded border-slate-800 text-indigo-600 focus:ring-indigo-500 bg-slate-950 h-3.5 w-3.5"
+                              className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 h-3.5 w-3.5"
                             />
                             <span className="capitalize font-medium">{act}</span>
                           </label>
@@ -277,7 +277,7 @@ export function RoleBuilderDialog({
                                     e.target.value as "OWN" | "TEAM" | "COMPANY"
                                   )
                                 }
-                                className="h-6 text-[10px] bg-slate-950 border border-slate-700 text-indigo-300 rounded px-1"
+                                className="h-6 text-[10px] bg-slate-50 border border-slate-200 text-indigo-700 rounded px-1 font-medium focus:ring-1 focus:ring-indigo-500"
                               >
                                 <option value="OWN">OWN</option>
                                 <option value="TEAM">TEAM</option>
@@ -294,20 +294,20 @@ export function RoleBuilderDialog({
             </div>
           </div>
 
-          <DialogFooter className="pt-3 gap-2 border-t border-slate-800">
+          <DialogFooter className="pt-3 gap-2 border-t border-slate-200">
             <Button
               type="button"
               variant="outline"
               onClick={() => onOpenChange(false)}
               disabled={loading}
-              className="border-slate-800 bg-slate-800/40 hover:bg-slate-800 text-slate-300 text-xs h-9"
+              className="border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs h-9"
             >
               Cancel
             </Button>
             <Button
               type="submit"
               disabled={loading || selectedPermissions.length === 0 || !name.trim()}
-              className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs h-9 font-medium"
+              className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs h-9 font-medium shadow-sm"
             >
               {loading ? (
                 <>

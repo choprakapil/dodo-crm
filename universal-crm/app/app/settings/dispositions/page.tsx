@@ -5,7 +5,7 @@ import { SettingsNav } from "@/components/settings/settings-nav";
 import { DispositionsWorkspace } from "@/components/settings/dispositions-workspace";
 
 export const metadata = {
-  title: "Dispositions | Universal CRM",
+  title: "Dispositions | DODO CRM",
   description: "Configure call outcomes, multi-level hierarchy, and automated follow-up lifecycle engine rules.",
 };
 
@@ -27,18 +27,9 @@ export default async function DispositionsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100">
-      <LeadNav
-        companyName={authContext.company.name}
-        companySlug={authContext.company.slug}
-        userName={authContext.user.name}
-        userEmail={authContext.user.email}
-        roleName={authContext.role.name}
-      />
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <SettingsNav />
-        <DispositionsWorkspace />
-      </main>
+    <div className="flex-1 space-y-6 p-4 sm:p-8 max-w-7xl mx-auto">
+      <SettingsNav />
+      <DispositionsWorkspace />
     </div>
   );
 }

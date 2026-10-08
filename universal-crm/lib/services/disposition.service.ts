@@ -214,7 +214,8 @@ export class DispositionService {
       });
 
       // Materialize exact path
-      const materializedPath = parent ? `${parent.path}/${created.id}` : `/${created.id}`;
+      const parentPath = parent ? (parent.path && parent.path.trim() !== "" ? parent.path : `/${parent.id}`) : "";
+      const materializedPath = parent ? `${parentPath}/${created.id}` : `/${created.id}`;
 
       const updated = await tx.disposition.update({
         where: { id: created.id },
@@ -506,4 +507,286 @@ export class DispositionService {
 
     return deleted;
   }
+
+  /**
+   * Get direct children and subtree statistics for a disposition.
+   */
+  static async getDispositionChildren(
+    ctx: AuthContext,
+    id: string
+  ): Promise<{
+    disposition: Disposition;
+    children: (Disposition & { _count: { children: number; leads: number } })[];
+    totalDescendantsCount: number;
+    hasActiveChildren: boolean;
+  }> {
+    const canView =
+      ctx.hasPermission("dispositions", "view") ||
+      ctx.hasPermission("dispositions", "manage") ||
+      ctx.hasPermission("leads", "view") ||
+      ctx.role.name === "Admin";
+
+    if (!canView) {
+      throw new ForbiddenError("Permission denied: dispositions.view required");
+    }
+
+    const disposition = await prisma.disposition.findFirst({
+      where: {
+        id,
+        companyId: ctx.company.id,
+        deletedAt: null,
+      },
+    });
+
+    if (!disposition) {
+      throw new NotFoundError("Disposition not found");
+    }
+
+    const directChildren = await prisma.disposition.findMany({
+      where: {
+        companyId: ctx.company.id,
+        parentId: id,
+        deletedAt: null,
+      },
+      include: {
+        _count: {
+          select: {
+            children: { where: { deletedAt: null } },
+            leads: true,
+          },
+        },
+      },
+      orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
+    });
+
+    const parentPath = disposition.path || `/${disposition.id}`;
+    const totalDescendantsCount = await prisma.disposition.count({
+      where: {
+        companyId: ctx.company.id,
+        path: { startsWith: `${parentPath}/` },
+        deletedAt: null,
+      },
+    });
+
+    return {
+      disposition,
+      children: directChildren,
+      totalDescendantsCount,
+      hasActiveChildren: directChildren.length > 0,
+    };
+  }
+
+  /**
+   * Reassign all child dispositions from a source parent to a new parent (or top-level).
+   * Validates tenant isolation, prevents cycle creation, and recalculates materialized paths atomically.
+   */
+  static async reassignChildren(
+    ctx: AuthContext,
+    sourceParentId: string,
+    targetParentId: string | null
+  ): Promise<{ count: number; reassignedChildren: Disposition[] }> {
+    const canManage =
+      ctx.hasPermission("dispositions", "update") ||
+      ctx.hasPermission("dispositions", "manage") ||
+      ctx.hasPermission("settings", "manage") ||
+      ctx.role.name === "Admin";
+
+    if (!canManage) {
+      throw new ForbiddenError("Permission denied: dispositions.update required");
+    }
+
+    const sourceParent = await prisma.disposition.findFirst({
+      where: {
+        id: sourceParentId,
+        companyId: ctx.company.id,
+        deletedAt: null,
+      },
+    });
+
+    if (!sourceParent) {
+      throw new NotFoundError("Source parent disposition not found");
+    }
+
+    const directChildren = await prisma.disposition.findMany({
+      where: {
+        companyId: ctx.company.id,
+        parentId: sourceParentId,
+        deletedAt: null,
+      },
+    });
+
+    if (directChildren.length === 0) {
+      return { count: 0, reassignedChildren: [] };
+    }
+
+    let targetParent: Disposition | null = null;
+    if (targetParentId) {
+      if (targetParentId === sourceParentId) {
+        throw new ValidationError("Target parent cannot be the same as source parent");
+      }
+
+      targetParent = await prisma.disposition.findFirst({
+        where: {
+          id: targetParentId,
+          companyId: ctx.company.id,
+          deletedAt: null,
+        },
+      });
+
+      if (!targetParent) {
+        throw new ValidationError("Target parent disposition does not exist or belongs to another tenant");
+      }
+
+      const sourcePath = sourceParent.path || `/${sourceParent.id}`;
+      const targetPath = targetParent.path || `/${targetParent.id}`;
+
+      // Cycle prevention: targetParent cannot be a descendant of sourceParent
+      if (targetPath.startsWith(`${sourcePath}/`) || targetParent.id === sourceParent.id) {
+        throw new ValidationError(
+          "Cycle detected: Cannot reassign children under a descendant of the source disposition"
+        );
+      }
+    }
+
+    return prisma.$transaction(async (tx) => {
+      const updatedList: Disposition[] = [];
+
+      for (const child of directChildren) {
+        let newDepth = 0;
+        let newChildPath = `/${child.id}`;
+
+        if (targetParent) {
+          const targetParentPath = targetParent.path || `/${targetParent.id}`;
+          newDepth = targetParent.depth + 1;
+          newChildPath = `${targetParentPath}/${child.id}`;
+        }
+
+        const oldChildPrefix = child.path || `/${child.id}`;
+
+        // Update child record
+        const updatedChild = await tx.disposition.update({
+          where: { id: child.id },
+          data: {
+            parentId: targetParent ? targetParent.id : null,
+            depth: newDepth,
+            path: newChildPath,
+          },
+        });
+        updatedList.push(updatedChild);
+
+        // Update all subtree descendants of this child
+        const descendants = await tx.disposition.findMany({
+          where: {
+            companyId: ctx.company.id,
+            path: { startsWith: `${oldChildPrefix}/` },
+            deletedAt: null,
+          },
+        });
+
+        for (const desc of descendants) {
+          const descPath = desc.path || `/${desc.id}`;
+          const updatedDescPath = newChildPath + descPath.slice(oldChildPrefix.length);
+          const updatedDescDepth = updatedDescPath.split("/").filter(Boolean).length - 1;
+          await tx.disposition.update({
+            where: { id: desc.id },
+            data: {
+              path: updatedDescPath,
+              depth: updatedDescDepth,
+            },
+          });
+        }
+      }
+
+      await tx.auditLog.create({
+        data: {
+          companyId: ctx.company.id,
+          userId: ctx.user.id,
+          action: "disposition.reassign_children",
+          entityType: "Disposition",
+          entityId: sourceParentId,
+          metadata: {
+            sourceParentId,
+            sourceParentName: sourceParent.name,
+            targetParentId: targetParent?.id || null,
+            targetParentName: targetParent?.name || "Top-Level (None)",
+            childrenCount: directChildren.length,
+            childrenIds: directChildren.map((c) => c.id),
+          },
+        },
+      });
+
+      return { count: directChildren.length, reassignedChildren: updatedList };
+    });
+  }
+
+  /**
+   * Cascade deactivate a parent disposition and all of its active descendants.
+   */
+  static async deactivateWithChildren(
+    ctx: AuthContext,
+    id: string
+  ): Promise<{ parent: Disposition; deactivatedCount: number }> {
+    const canManage =
+      ctx.hasPermission("dispositions", "update") ||
+      ctx.hasPermission("dispositions", "manage") ||
+      ctx.hasPermission("settings", "manage") ||
+      ctx.role.name === "Admin";
+
+    if (!canManage) {
+      throw new ForbiddenError("Permission denied: dispositions.update required");
+    }
+
+    const existing = await prisma.disposition.findFirst({
+      where: {
+        id,
+        companyId: ctx.company.id,
+        deletedAt: null,
+      },
+    });
+
+    if (!existing) {
+      throw new NotFoundError("Disposition not found");
+    }
+
+    const parentPath = existing.path || `/${existing.id}`;
+
+    return prisma.$transaction(async (tx) => {
+      // Deactivate parent
+      const parent = await tx.disposition.update({
+        where: { id: existing.id },
+        data: { isActive: false },
+      });
+
+      // Deactivate all active descendants
+      const descendants = await tx.disposition.updateMany({
+        where: {
+          companyId: ctx.company.id,
+          path: { startsWith: `${parentPath}/` },
+          deletedAt: null,
+          isActive: true,
+        },
+        data: { isActive: false },
+      });
+
+      await tx.auditLog.create({
+        data: {
+          companyId: ctx.company.id,
+          userId: ctx.user.id,
+          action: "disposition.deactivate_cascade",
+          entityType: "Disposition",
+          entityId: parent.id,
+          metadata: {
+            name: parent.name,
+            descendantsDeactivated: descendants.count,
+          },
+        },
+      });
+
+      return {
+        parent,
+        deactivatedCount: descendants.count + 1,
+      };
+    });
+  }
 }
+

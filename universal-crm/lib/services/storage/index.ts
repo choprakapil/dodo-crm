@@ -26,6 +26,7 @@ import {
   PutObjectCommand,
   GetObjectCommand,
   DeleteObjectCommand,
+  ListObjectsV2Command,
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { logger } from "@/lib/logger";
@@ -67,12 +68,32 @@ export interface UploadResult {
   size: number;
 }
 
+export interface StorageCategoryStats {
+  usedBytes: number;
+  fileCount: number;
+}
+
+export interface StorageUsageStats {
+  usedBytes: number;
+  fileCount: number;
+  categories: Record<string, StorageCategoryStats>;
+}
+
+export interface PlatformStorageUsage {
+  totalBytes: number;
+  totalFiles: number;
+  byCompany: Record<string, StorageUsageStats>;
+  storageProvider: "local" | "r2";
+}
+
 export interface StorageService {
   upload(options: UploadOptions): Promise<UploadResult>;
   delete(key: string, expectedCompanyId?: string): Promise<void>;
   getUrl(key: string, options?: { expiresInSeconds?: number; expectedCompanyId?: string }): Promise<string>;
   getSignedUrl(key: string, options?: { expiresInSeconds?: number; expectedCompanyId?: string }): Promise<string>;
   getTenantSignedUrl(companyId: string, key: string, expiresInSeconds?: number): Promise<string>;
+  getCompanyStorageUsage(companyId: string): Promise<StorageUsageStats>;
+  getPlatformStorageUsage(): Promise<PlatformStorageUsage>;
 }
 
 // =============================================================================
@@ -365,6 +386,130 @@ export class R2StorageService implements StorageService {
   ): Promise<string> {
     return this.getSignedUrl(key, { expiresInSeconds, expectedCompanyId: companyId });
   }
+
+  async getCompanyStorageUsage(companyId: string): Promise<StorageUsageStats> {
+    this.ensureConfigured();
+    const sanitizedCompanyId = companyId.trim().replace(/^\/+|\/+$/g, "");
+    if (!sanitizedCompanyId || !/^[a-zA-Z0-9_-]+$/.test(sanitizedCompanyId)) {
+      return { usedBytes: 0, fileCount: 0, categories: {} };
+    }
+
+    const categories: Record<string, StorageCategoryStats> = {};
+    let totalBytes = 0;
+    let totalFiles = 0;
+    let continuationToken: string | undefined = undefined;
+
+    try {
+      do {
+        const command: ListObjectsV2Command = new ListObjectsV2Command({
+          Bucket: this.bucket,
+          Prefix: `${sanitizedCompanyId}/`,
+          ContinuationToken: continuationToken,
+        });
+
+        const response = await this.client!.send(command);
+        if (response.Contents) {
+          for (const item of response.Contents) {
+            if (item.Key && item.Size !== undefined && item.Size > 0) {
+              const size = Math.max(0, item.Size);
+              totalBytes += size;
+              totalFiles += 1;
+
+              // Parse folder from key: {companyId}/{folder}/{filename}
+              const relativePath = item.Key.substring(sanitizedCompanyId.length + 1);
+              const parts = relativePath.split("/");
+              const category = parts.length > 1 ? parts[0] : "files";
+
+              if (!categories[category]) {
+                categories[category] = { usedBytes: 0, fileCount: 0 };
+              }
+              categories[category].usedBytes += size;
+              categories[category].fileCount += 1;
+            }
+          }
+        }
+        continuationToken = response.NextContinuationToken;
+      } while (continuationToken);
+    } catch (err: any) {
+      logger.warn("R2 storage usage query failed", {
+        service: "StorageService",
+        provider: "r2",
+        companyId: sanitizedCompanyId,
+        errorMessage: err?.message,
+      });
+    }
+
+    return {
+      usedBytes: totalBytes,
+      fileCount: totalFiles,
+      categories,
+    };
+  }
+
+  async getPlatformStorageUsage(): Promise<PlatformStorageUsage> {
+    this.ensureConfigured();
+
+    const byCompany: Record<string, StorageUsageStats> = {};
+    let totalBytes = 0;
+    let totalFiles = 0;
+    let continuationToken: string | undefined = undefined;
+
+    try {
+      do {
+        const command: ListObjectsV2Command = new ListObjectsV2Command({
+          Bucket: this.bucket,
+          ContinuationToken: continuationToken,
+        });
+
+        const response = await this.client!.send(command);
+        if (response.Contents) {
+          for (const item of response.Contents) {
+            if (item.Key && item.Size !== undefined) {
+              const size = Math.max(0, item.Size);
+              totalBytes += size;
+              totalFiles += 1;
+
+              const parts = item.Key.split("/");
+              const companyId = parts[0];
+              const category = parts.length > 2 ? parts[1] : "files";
+
+              if (companyId) {
+                if (!byCompany[companyId]) {
+                  byCompany[companyId] = {
+                    usedBytes: 0,
+                    fileCount: 0,
+                    categories: {},
+                  };
+                }
+                byCompany[companyId].usedBytes += size;
+                byCompany[companyId].fileCount += 1;
+
+                if (!byCompany[companyId].categories[category]) {
+                  byCompany[companyId].categories[category] = { usedBytes: 0, fileCount: 0 };
+                }
+                byCompany[companyId].categories[category].usedBytes += size;
+                byCompany[companyId].categories[category].fileCount += 1;
+              }
+            }
+          }
+        }
+        continuationToken = response.NextContinuationToken;
+      } while (continuationToken);
+    } catch (err: any) {
+      logger.warn("R2 platform storage usage query failed", {
+        service: "StorageService",
+        provider: "r2",
+        errorMessage: err?.message,
+      });
+    }
+
+    return {
+      totalBytes,
+      totalFiles,
+      byCompany,
+      storageProvider: "r2",
+    };
+  }
 }
 
 // =============================================================================
@@ -462,6 +607,106 @@ export class LocalStorageService implements StorageService {
     expiresInSeconds: number = 3600
   ): Promise<string> {
     return this.getSignedUrl(key, { expiresInSeconds, expectedCompanyId: companyId });
+  }
+
+  async getCompanyStorageUsage(companyId: string): Promise<StorageUsageStats> {
+    this.assertNotProduction();
+    const sanitizedCompanyId = companyId.trim().replace(/^\/+|\/+$/g, "");
+    if (!sanitizedCompanyId || !/^[a-zA-Z0-9_-]+$/.test(sanitizedCompanyId)) {
+      return { usedBytes: 0, fileCount: 0, categories: {} };
+    }
+
+    const companyDir = path.join(this.basePath, sanitizedCompanyId);
+    try {
+      const stats = await fs.stat(companyDir);
+      if (!stats.isDirectory()) {
+        return { usedBytes: 0, fileCount: 0, categories: {} };
+      }
+    } catch {
+      return { usedBytes: 0, fileCount: 0, categories: {} };
+    }
+
+    const categories: Record<string, StorageCategoryStats> = {};
+    let totalBytes = 0;
+    let totalFiles = 0;
+
+    const scanDirectory = async (dir: string, currentCategory: string) => {
+      try {
+        const entries = await fs.readdir(dir, { withFileTypes: true });
+        for (const entry of entries) {
+          const fullPath = path.join(dir, entry.name);
+          if (entry.isDirectory()) {
+            const nextCategory = dir === companyDir ? entry.name : currentCategory;
+            await scanDirectory(fullPath, nextCategory);
+          } else if (entry.isFile()) {
+            try {
+              const fileStat = await fs.stat(fullPath);
+              const fileSize = Math.max(0, fileStat.size);
+              totalBytes += fileSize;
+              totalFiles += 1;
+
+              const cat = currentCategory || "files";
+              if (!categories[cat]) {
+                categories[cat] = { usedBytes: 0, fileCount: 0 };
+              }
+              categories[cat].usedBytes += fileSize;
+              categories[cat].fileCount += 1;
+            } catch {
+              // Ignore unreadable file
+            }
+          }
+        }
+      } catch {
+        // Ignore unreadable directory
+      }
+    };
+
+    await scanDirectory(companyDir, "files");
+
+    return {
+      usedBytes: totalBytes,
+      fileCount: totalFiles,
+      categories,
+    };
+  }
+
+  async getPlatformStorageUsage(): Promise<PlatformStorageUsage> {
+    this.assertNotProduction();
+
+    try {
+      const stats = await fs.stat(this.basePath);
+      if (!stats.isDirectory()) {
+        return { totalBytes: 0, totalFiles: 0, byCompany: {}, storageProvider: "local" };
+      }
+    } catch {
+      return { totalBytes: 0, totalFiles: 0, byCompany: {}, storageProvider: "local" };
+    }
+
+    const byCompany: Record<string, StorageUsageStats> = {};
+    let platformTotalBytes = 0;
+    let platformTotalFiles = 0;
+
+    try {
+      const entries = await fs.readdir(this.basePath, { withFileTypes: true });
+      for (const entry of entries) {
+        if (entry.isDirectory()) {
+          const companyId = entry.name;
+          const usage = await this.getCompanyStorageUsage(companyId);
+          byCompany[companyId] = usage;
+          platformTotalBytes += usage.usedBytes;
+          platformTotalFiles += usage.fileCount;
+        }
+      }
+    } catch {
+      // Ignore errors reading base path
+    }
+
+    return {
+      totalBytes: platformTotalBytes,
+      totalFiles: platformTotalFiles,
+      byCompany,
+      storageProvider: "local",
+    };
   }
 }
 
