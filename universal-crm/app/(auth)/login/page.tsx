@@ -8,37 +8,35 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Loader2, AlertCircle, ArrowRight, ShieldCheck, Check } from "lucide-react";
-
-const DEMO_ACCOUNTS = [
-  {
-    role: "Company Admin (Owner)",
-    name: "Dheeraj Aggarwal",
-    email: "info@thewebtycoons.com",
-    password: "Demo@123456",
-    badge: "Webtycoons",
-  },
-];
+import { Loader2, AlertCircle, ArrowRight, ShieldCheck } from "lucide-react";
 
 function LoginForm() {
   const searchParams = useSearchParams();
   const redirectUrl = searchParams.get("redirect") || "/app";
+  const companyParam = searchParams.get("company") || undefined;
 
-  const [email, setEmail] = useState("info@thewebtycoons.com");
-  const [password, setPassword] = useState("Demo@123456");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [activeQuickEmail, setActiveQuickEmail] = useState<string | null>("info@thewebtycoons.com");
 
   const performLogin = async (targetEmail: string, targetPass: string) => {
     setError(null);
     setIsLoading(true);
 
     try {
+      const payload: { email: string; password: string; companySlug?: string } = {
+        email: targetEmail.trim(),
+        password: targetPass,
+      };
+      if (companyParam) {
+        payload.companySlug = companyParam;
+      }
+
       const res = await fetch("/api/v1/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: targetEmail, password: targetPass, companySlug: "webtycoons" }),
+        body: JSON.stringify(payload),
       });
 
       const data = await res.json();
@@ -66,13 +64,6 @@ function LoginForm() {
     await performLogin(email, password);
   };
 
-  const handleQuickLogin = async (acc: typeof DEMO_ACCOUNTS[0]) => {
-    setEmail(acc.email);
-    setPassword(acc.password);
-    setActiveQuickEmail(acc.email);
-    await performLogin(acc.email, acc.password);
-  };
-
   return (
     <div className="space-y-4">
       <Card className="border-slate-200/90 bg-white text-slate-900 shadow-md">
@@ -81,7 +72,7 @@ function LoginForm() {
             Welcome back
           </CardTitle>
           <CardDescription className="text-xs text-slate-500">
-            Sign in to your Webtycoons workspace
+            Sign in to your CRM workspace
           </CardDescription>
         </CardHeader>
 
@@ -103,10 +94,7 @@ function LoginForm() {
                 type="email"
                 placeholder="name@company.com"
                 value={email}
-                onChange={(e) => {
-                  setEmail(e.target.value);
-                  setActiveQuickEmail(null);
-                }}
+                onChange={(e) => setEmail(e.target.value)}
                 required
                 autoComplete="email"
                 className="h-9 border-slate-300 bg-white text-xs text-slate-900 placeholder:text-slate-400 focus-visible:ring-1 focus-visible:ring-indigo-600 focus-visible:border-indigo-600"
@@ -164,46 +152,6 @@ function LoginForm() {
           </CardFooter>
         </form>
       </Card>
-
-      {/* 1-Click Verified Demo Accounts Strip */}
-      <div className="rounded-xl border border-slate-200/90 bg-white p-3.5 space-y-2.5 shadow-sm">
-        <div className="flex items-center justify-between px-0.5">
-          <span className="text-[11px] font-semibold text-slate-700 uppercase tracking-wider">
-            Verified Demo Accounts
-          </span>
-          <span className="text-[10px] text-indigo-600 font-medium">1-Click Sign In</span>
-        </div>
-
-        <div className="grid grid-cols-1 gap-2">
-          {DEMO_ACCOUNTS.map((acc) => {
-            const isActive = activeQuickEmail === acc.email;
-            return (
-              <button
-                key={acc.email}
-                type="button"
-                disabled={isLoading}
-                onClick={() => handleQuickLogin(acc)}
-                className={`text-left p-2.5 rounded-lg border transition group relative ${
-                  isActive
-                    ? "border-indigo-500 bg-indigo-50/70 shadow-2xs"
-                    : "border-slate-200 bg-slate-50/60 hover:border-indigo-200 hover:bg-indigo-50/40"
-                }`}
-              >
-                <div className="flex items-center justify-between gap-1 mb-0.5">
-                  <span className="text-[11px] font-semibold text-slate-900 truncate group-hover:text-indigo-700">
-                    {acc.name}
-                  </span>
-                  {isActive && <Check className="h-3 w-3 text-indigo-600 shrink-0" />}
-                </div>
-                <div className="text-[10px] font-medium text-indigo-600 truncate">{acc.role}</div>
-                <div className="text-[9px] text-slate-500 font-mono truncate mt-0.5">
-                  {acc.email}
-                </div>
-              </button>
-            );
-          })}
-        </div>
-      </div>
     </div>
   );
 }
