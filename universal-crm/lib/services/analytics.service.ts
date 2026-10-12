@@ -16,6 +16,7 @@ import { getActivityAnalytics } from "./analytics/activities.analytics";
 import { getFollowUpAnalytics } from "./analytics/followups.analytics";
 import { getTeamAnalytics } from "./analytics/team.analytics";
 import { serializeCsv, sanitizeFormulaInjection } from "@/lib/utils/csv";
+import { QuotaService } from "./quota.service";
 
 export class AnalyticsService {
   /**
@@ -122,8 +123,9 @@ export class AnalyticsService {
     ctx: AuthContext,
     query: AnalyticsExportQuery
   ): Promise<{ csv: string; filename: string }> {
-    // 1. Verify export authorization
+    // 1. Verify export authorization & plan feature gating
     getReportsDataScope(ctx, "export");
+    await QuotaService.assertCanUseFeature(ctx.company.id, "export");
 
     const overview = await this.getOverview(ctx, {
       preset: query.preset,

@@ -148,6 +148,8 @@ model Company {
   customerDirectoryVisibility String   @default("DATA_SCOPE") // "DATA_SCOPE" | "COMPANY"
   createEnquiryHistoryEnabled Boolean  @default(true)
   historyPreviewFields        Json?
+  limitOverrides              Json?
+  featureOverrides            Json?
 
   // Onboarding & Tenant Setup State (Phase B.2)
   onboardingCompleted         Boolean  @default(false)

@@ -12,6 +12,7 @@ import { paginatedResponse } from "@/lib/utils/pagination";
 import { hashPassword, validatePasswordStrength } from "@/lib/auth/password";
 import { UserQueryInput, UpdateUserInput, AdminResetPasswordInput } from "@/lib/validations/user";
 import { Prisma, UserStatus } from "@prisma/client";
+import { QuotaService } from "./quota.service";
 
 export class UserService {
   /**
@@ -254,6 +255,13 @@ export class UserService {
     }
 
     const updatedUser = await prisma.$transaction(async (tx) => {
+      // If reactivating from DISABLED to ACTIVE, enforce user seat quota under tenant lock
+      if (existing.status === UserStatus.DISABLED && data.status === UserStatus.ACTIVE) {
+        await QuotaService.assertCanCreateUser(ctx.company.id, 1, tx);
+      } else {
+        await QuotaService.acquireCompanyQuotaLock(ctx.company.id, tx);
+      }
+
       // 1. Update basic fields
       const user = await tx.user.update({
         where: { id },
@@ -337,27 +345,34 @@ export class UserService {
       throw new NotFoundError("User not found");
     }
 
-    const updated = await prisma.user.update({
-      where: { id },
-      data: { status },
-    });
+    const updated = await prisma.$transaction(async (tx) => {
+      // If reactivating from DISABLED to ACTIVE, enforce user seat quota under tenant lock
+      if (existing.status === UserStatus.DISABLED && status === UserStatus.ACTIVE) {
+        await QuotaService.assertCanCreateUser(ctx.company.id, 1, tx);
+      } else {
+        await QuotaService.acquireCompanyQuotaLock(ctx.company.id, tx);
+      }
 
-    if (status === UserStatus.DISABLED) {
-      await revokeAllUserSessions(id);
-    }
+      const res = await tx.user.update({
+        where: { id },
+        data: { status },
+      });
 
-    await prisma.auditLog.create({
-      data: {
-        companyId: ctx.company.id,
-        userId: ctx.user.id,
-        action: status === UserStatus.ACTIVE ? "user.enabled" : "user.disabled",
-        entityType: "user",
-        entityId: id,
-        metadata: {
-          previousStatus: existing.status,
-          newStatus: status,
+      await tx.auditLog.create({
+        data: {
+          companyId: ctx.company.id,
+          userId: ctx.user.id,
+          action: status === UserStatus.ACTIVE ? "user.enabled" : "user.disabled",
+          entityType: "user",
+          entityId: id,
+          metadata: {
+            previousStatus: existing.status,
+            newStatus: status,
+          },
         },
-      },
+      });
+
+      return res;
     });
 
     return updated;

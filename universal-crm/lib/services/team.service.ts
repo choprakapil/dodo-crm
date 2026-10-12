@@ -11,6 +11,7 @@ import { NotFoundError, ValidationError, ForbiddenError } from "@/lib/errors";
 import { paginatedResponse } from "@/lib/utils/pagination";
 import { TeamQueryInput, CreateTeamInput, UpdateTeamInput } from "@/lib/validations/team";
 import { Prisma } from "@prisma/client";
+import { QuotaService } from "./quota.service";
 
 export class TeamService {
   /**
@@ -248,70 +249,76 @@ export class TeamService {
       }
     }
 
-    const team = await prisma.team.create({
-      data: {
-        companyId: ctx.company.id,
-        name: data.name,
-        description: data.description,
-        departmentId: data.departmentId || null,
-        managerId: data.managerId,
-        isActive: data.isActive ?? true,
-      },
-      include: {
-        manager: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
+    const team = await prisma.$transaction(async (tx) => {
+      await QuotaService.assertLimit(ctx.company.id, "maxTeams", 1, tx);
+
+      const createdTeam = await tx.team.create({
+        data: {
+          companyId: ctx.company.id,
+          name: data.name,
+          description: data.description,
+          departmentId: data.departmentId || null,
+          managerId: data.managerId,
+          isActive: data.isActive ?? true,
         },
-        department: {
-          select: {
-            id: true,
-            name: true,
-            divisionId: true,
-            division: {
-              select: {
-                id: true,
-                name: true,
+        include: {
+          manager: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+          department: {
+            select: {
+              id: true,
+              name: true,
+              divisionId: true,
+              division: {
+                select: {
+                  id: true,
+                  name: true,
+                },
               },
             },
           },
         },
-      },
-    });
+      });
 
-    // If manager specified, also automatically ensure they are a member of the team
-    if (data.managerId) {
-      await prisma.teamMember.upsert({
-        where: {
-          teamId_userId: {
-            teamId: team.id,
+      // If manager specified, also automatically ensure they are a member of the team
+      if (data.managerId) {
+        await tx.teamMember.upsert({
+          where: {
+            teamId_userId: {
+              teamId: createdTeam.id,
+              userId: data.managerId,
+            },
+          },
+          update: {},
+          create: {
+            companyId: ctx.company.id,
+            teamId: createdTeam.id,
             userId: data.managerId,
           },
-        },
-        update: {},
-        create: {
+        });
+      }
+
+      await tx.auditLog.create({
+        data: {
           companyId: ctx.company.id,
-          teamId: team.id,
-          userId: data.managerId,
+          userId: ctx.user.id,
+          action: "team.created",
+          entityType: "team",
+          entityId: createdTeam.id,
+          metadata: {
+            name: createdTeam.name,
+            departmentId: createdTeam.departmentId,
+            managerId: createdTeam.managerId,
+          },
         },
       });
-    }
 
-    await prisma.auditLog.create({
-      data: {
-        companyId: ctx.company.id,
-        userId: ctx.user.id,
-        action: "team.created",
-        entityType: "team",
-        entityId: team.id,
-        metadata: {
-          name: team.name,
-          departmentId: team.departmentId,
-          managerId: team.managerId,
-        },
-      },
+      return createdTeam;
     });
 
     return team;

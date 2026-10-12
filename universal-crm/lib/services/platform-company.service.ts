@@ -387,10 +387,8 @@ export class PlatformCompanyService {
           planId: plan.id,
           onboardingCompleted: false,
           onboardingStep: "PROFILE",
-          historyPreviewFields: (input.limitOverrides || input.featureOverrides) ? {
-            limitOverrides: input.limitOverrides || null,
-            featureOverrides: input.featureOverrides || null,
-          } : undefined,
+          ...(input.limitOverrides ? { limitOverrides: input.limitOverrides as Prisma.InputJsonValue } : {}),
+          ...(input.featureOverrides ? { featureOverrides: input.featureOverrides as Prisma.InputJsonValue } : {}),
         },
       });
 
@@ -468,7 +466,7 @@ export class PlatformCompanyService {
     });
 
     const appUrl = getAppUrl();
-    const inviteUrl = `${appUrl}/app/invite/${rawInviteToken}`;
+    const inviteUrl = `${appUrl}/invite/${rawInviteToken}`;
 
     // Send invitation email asynchronously
     const emailOptions = {

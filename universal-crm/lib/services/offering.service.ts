@@ -17,6 +17,7 @@ import {
   offeringUpdateSchema,
 } from "@/lib/validations/offering";
 import { Prisma } from "@prisma/client";
+import { QuotaService } from "./quota.service";
 
 export class OfferingService {
   /**
@@ -137,34 +138,41 @@ export class OfferingService {
       );
     }
 
-    const offering = await prisma.offering.create({
-      data: {
-        companyId: ctx.company.id,
-        name: validated.name,
-        type: validated.type,
-        code: validated.code || null,
-        description: validated.description || null,
-        defaultPrice: new Prisma.Decimal(validated.defaultPrice),
-        currency: resolvedCurrency,
-        isActive: validated.isActive ?? true,
-        allowSalesPriceOverride: validated.allowSalesPriceOverride ?? true,
-      },
-    });
+    const quotaKey = validated.type === "PRODUCT" ? "maxProducts" : "maxServices";
+    const offering = await prisma.$transaction(async (tx) => {
+      await QuotaService.assertLimit(ctx.company.id, quotaKey, 1, tx);
 
-    await prisma.auditLog.create({
-      data: {
-        companyId: ctx.company.id,
-        userId: ctx.user.id,
-        action: "offering.create",
-        entityType: "offering",
-        entityId: offering.id,
-        metadata: {
-          name: offering.name,
-          type: offering.type,
-          defaultPrice: offering.defaultPrice.toString(),
-          allowSalesPriceOverride: offering.allowSalesPriceOverride,
+      const createdOffering = await tx.offering.create({
+        data: {
+          companyId: ctx.company.id,
+          name: validated.name,
+          type: validated.type,
+          code: validated.code || null,
+          description: validated.description || null,
+          defaultPrice: new Prisma.Decimal(validated.defaultPrice),
+          currency: resolvedCurrency,
+          isActive: validated.isActive ?? true,
+          allowSalesPriceOverride: validated.allowSalesPriceOverride ?? true,
         },
-      },
+      });
+
+      await tx.auditLog.create({
+        data: {
+          companyId: ctx.company.id,
+          userId: ctx.user.id,
+          action: "offering.create",
+          entityType: "offering",
+          entityId: createdOffering.id,
+          metadata: {
+            name: createdOffering.name,
+            type: createdOffering.type,
+            defaultPrice: createdOffering.defaultPrice.toString(),
+            allowSalesPriceOverride: createdOffering.allowSalesPriceOverride,
+          },
+        },
+      });
+
+      return createdOffering;
     });
 
     return offering;

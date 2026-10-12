@@ -21,6 +21,7 @@ import {
 } from "@/lib/validations/lead";
 import { NotFoundError, ValidationError, ForbiddenError } from "@/lib/errors";
 import { paginatedResponse } from "@/lib/utils/pagination";
+import { QuotaService } from "./quota.service";
 import {
   ActivityType,
   Prisma,
@@ -346,6 +347,9 @@ export class LeadService {
 
     // 6. Execute creation within atomic transaction
     return await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+      // Server-side quota check with exclusive row-level lock on Company row
+      await QuotaService.assertCanCreateLead(ctx.company.id, 1, tx);
+
       // Resolve or create customer inside this exact transaction (ensures atomic rollback on failure)
       let finalCustomerId: string | null = input.customerId || null;
 

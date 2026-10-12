@@ -15,9 +15,10 @@ import {
   leadImportExecuteSchema,
 } from "@/lib/validations/lead-import";
 import { validateCustomFieldValue } from "@/lib/validations/custom-field";
-import { ForbiddenError, NotFoundError, ValidationError } from "@/lib/errors";
+import { ForbiddenError, NotFoundError, ValidationError, QuotaExceededError } from "@/lib/errors";
 import { paginatedResponse } from "@/lib/utils/pagination";
 import { ActivityType, LeadPriority, Prisma } from "@prisma/client";
+import { QuotaService } from "./quota.service";
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
 const MAX_ROWS = 50000;
@@ -38,6 +39,8 @@ export class LeadImportService {
     if (!ctx.hasPermission("leads", "create")) {
       throw new ForbiddenError("You do not have permission to import leads");
     }
+
+    await QuotaService.assertCanUseFeature(ctx.company.id, "leadImport");
 
     const { csvContent } = leadImportPreviewSchema.parse({
       csvContent: rawCsv,
@@ -119,6 +122,8 @@ export class LeadImportService {
       throw new ForbiddenError("You do not have permission to import leads");
     }
 
+    await QuotaService.assertCanUseFeature(ctx.company.id, "leadImport");
+
     const input = leadImportExecuteSchema.parse(rawInput);
 
     if (input.csvContent.length > MAX_FILE_SIZE) {
@@ -137,6 +142,81 @@ export class LeadImportService {
 
     if (!Object.values(input.columnMappings).includes("name")) {
       throw new ValidationError("Column mappings must include a mapping for the required 'name' field");
+    }
+
+    // Invert column mappings: crmFieldKey -> csvHeader
+    const mappingEntries = Object.entries(input.columnMappings);
+    const getFieldValue = (row: Record<string, string>, targetKey: string): string | undefined => {
+      for (const [csvCol, crmKey] of mappingEntries) {
+        if (crmKey === targetKey && row[csvCol] !== undefined) {
+          const val = row[csvCol].trim();
+          return val.length > 0 ? val : undefined;
+        }
+      }
+      return undefined;
+    };
+
+    // Pre-calculate expected new records based on duplicateStrategy
+    let expectedNewLeadsCount = 0;
+    if (input.duplicateStrategy === "CREATE") {
+      for (const row of rows) {
+        if (getFieldValue(row, "name")) {
+          expectedNewLeadsCount++;
+        }
+      }
+    } else {
+      // SKIP or UPDATE: leads matching existing email or phone will NOT consume quota
+      const csvEmails = rows
+        .map((r) => getFieldValue(r, "email")?.toLowerCase())
+        .filter(Boolean) as string[];
+      const csvPhones = rows
+        .map((r) => getFieldValue(r, "phone"))
+        .filter(Boolean) as string[];
+
+      const existingLeads = await prisma.lead.findMany({
+        where: {
+          companyId: ctx.company.id,
+          deletedAt: null,
+          OR: [
+            ...(csvEmails.length > 0 ? [{ email: { in: csvEmails } }] : []),
+            ...(csvPhones.length > 0 ? [{ phone: { in: csvPhones } }] : []),
+          ],
+        },
+        select: { email: true, phone: true },
+      });
+
+      const existingEmailSet = new Set(
+        existingLeads.map((l) => l.email?.toLowerCase()).filter(Boolean)
+      );
+      const existingPhoneSet = new Set(
+        existingLeads.map((l) => l.phone).filter(Boolean)
+      );
+
+      const seenEmailsInFile = new Set<string>();
+      const seenPhonesInFile = new Set<string>();
+
+      for (const row of rows) {
+        const name = getFieldValue(row, "name");
+        if (!name) continue;
+
+        const email = getFieldValue(row, "email")?.toLowerCase();
+        const phone = getFieldValue(row, "phone");
+
+        const matchesExisting =
+          (email && (existingEmailSet.has(email) || seenEmailsInFile.has(email))) ||
+          (phone && (existingPhoneSet.has(phone) || seenPhonesInFile.has(phone)));
+
+        if (!matchesExisting) {
+          expectedNewLeadsCount++;
+        }
+        if (email) seenEmailsInFile.add(email);
+        if (phone) seenPhonesInFile.add(phone);
+      }
+    }
+
+    // Quota pre-check: Fail-all before insertion if capacity is insufficient
+    if (expectedNewLeadsCount > 0) {
+      await QuotaService.assertCanCreateLead(ctx.company.id, expectedNewLeadsCount);
     }
 
     // 1. Create LeadImport tracking record
@@ -225,18 +305,6 @@ export class LeadImportService {
       teamMap.set(t.id, t.id);
     }
 
-    // Invert column mappings: crmFieldKey -> csvHeader
-    const mappingEntries = Object.entries(input.columnMappings);
-    const getFieldValue = (row: Record<string, string>, targetKey: string): string | undefined => {
-      for (const [csvCol, crmKey] of mappingEntries) {
-        if (crmKey === targetKey && row[csvCol] !== undefined) {
-          const val = row[csvCol].trim();
-          return val.length > 0 ? val : undefined;
-        }
-      }
-      return undefined;
-    };
-
     let successfulRows = 0;
     let skippedRows = 0;
     let updatedRows = 0;
@@ -244,10 +312,13 @@ export class LeadImportService {
     const errorDetails: ImportErrorDetail[] = [];
 
     // 3. Process in batches
-    for (let b = 0; b < rows.length; b += BATCH_SIZE) {
+    try {
+      for (let b = 0; b < rows.length; b += BATCH_SIZE) {
       const batch = rows.slice(b, b + BATCH_SIZE);
 
       await prisma.$transaction(async (tx) => {
+        await QuotaService.acquireCompanyQuotaLock(ctx.company.id, tx);
+
         for (let idx = 0; idx < batch.length; idx++) {
           const rowNumber = b + idx + 1;
           const row = batch[idx];
@@ -408,6 +479,9 @@ export class LeadImportService {
               // If strategy === "CREATE", fall through to create another record
             }
 
+            // Re-validate and recount quota usage inside the transaction under the row lock
+            await QuotaService.assertCanCreateLead(ctx.company.id, 1, tx);
+
             // Create new lead
             const newLead = await tx.lead.create({
               data: {
@@ -468,6 +542,10 @@ export class LeadImportService {
 
             successfulRows++;
           } catch (err: unknown) {
+            if (err instanceof QuotaExceededError) {
+              // Abort transaction immediately so no partial batch is committed when quota limit is reached
+              throw err;
+            }
             failedRows++;
             const message = err instanceof Error ? err.message : "Validation or insertion error";
             errorDetails.push({
@@ -478,6 +556,26 @@ export class LeadImportService {
         }
       });
     }
+  } catch (err: unknown) {
+    if (err instanceof QuotaExceededError) {
+      await prisma.leadImport.update({
+        where: { id: leadImport.id },
+        data: {
+          successfulRows,
+          skippedRows,
+          updatedRows,
+          failedRows: rows.length - (successfulRows + skippedRows + updatedRows),
+          status: "FAILED",
+          errorSummary: [
+            ...errorDetails.slice(0, 999),
+            { row: 0, reason: err.message },
+          ] as unknown as Prisma.InputJsonValue,
+          completedAt: new Date(),
+        },
+      });
+    }
+    throw err;
+  }
 
     // 5. Finalize LeadImport status
     const finalStatus =

@@ -7,7 +7,9 @@
 
 import { prisma } from "@/lib/db";
 import { NotFoundError } from "@/lib/errors";
+import { Prisma } from "@prisma/client";
 import { PlatformAuditLogService } from "./platform-audit-log.service";
+import { QuotaService } from "./quota.service";
 
 export interface PlatformFeatureDefinition {
   key: string;
@@ -196,37 +198,15 @@ export class PlatformFeatureService {
       throw new NotFoundError("Company not found.");
     }
 
-    const planFeatures: Record<string, boolean> = {};
-    if (company.plan && company.plan.features) {
-      Object.assign(planFeatures, company.plan.features as Record<string, boolean>);
-    } else {
-      // Default tier fallback
-      PLATFORM_FEATURE_CATALOG.forEach((f) => {
-        planFeatures[f.key] = f.defaultTiers.includes("STARTER");
-      });
-    }
+    const { effectiveFeatures, featureOverrides, plan } =
+      await QuotaService.resolveCompanyLimits(companyId);
 
-    // Read organization-specific overrides if configured in historyPreviewFields or dedicated container
-    const overrides: Record<string, boolean> = {};
-    const companyData = company as any;
-    if (companyData.featureOverrides && typeof companyData.featureOverrides === "object") {
-      Object.assign(overrides, companyData.featureOverrides);
-    }
-
-    // Calculate effective features
-    const effective: Record<string, boolean> = {};
-    PLATFORM_FEATURE_CATALOG.forEach((f) => {
-      if (overrides[f.key] !== undefined) {
-        effective[f.key] = overrides[f.key];
-      } else {
-        effective[f.key] = Boolean(planFeatures[f.key]);
-      }
-    });
+    const planFeatures: Record<string, boolean> = (plan.features as Record<string, boolean>) || {};
 
     return {
       planFeatures,
-      overrides,
-      effective,
+      overrides: featureOverrides,
+      effective: effectiveFeatures,
       catalog: PLATFORM_FEATURE_CATALOG,
     };
   }
@@ -235,12 +215,19 @@ export class PlatformFeatureService {
    * Checks whether a feature is effectively enabled for a company.
    */
   static async isFeatureEnabled(companyId: string, featureKey: string): Promise<boolean> {
-    const { effective } = await this.getEffectiveFeatures(companyId);
-    return Boolean(effective[featureKey]);
+    return QuotaService.checkCanUseFeature(companyId, featureKey);
   }
 
   /**
-   * Updates feature overrides for a specific organization.
+   * Asserts whether a feature is enabled for a company, throwing QuotaExceededError if disabled.
+   */
+  static async assertFeatureEnabled(companyId: string, featureKey: string): Promise<void> {
+    await QuotaService.assertCanUseFeature(companyId, featureKey);
+  }
+
+  /**
+   * Updates feature overrides for a specific organization in dedicated Company.featureOverrides column.
+   * Completely preserves Company.historyPreviewFields and other tenant configurations.
    */
   static async setCompanyFeatureOverrides(
     companyId: string,
@@ -257,16 +244,11 @@ export class PlatformFeatureService {
       throw new NotFoundError("Company not found.");
     }
 
-    // Persist overrides in company historyPreviewFields or dedicated field
     const updated = await prisma.company.update({
       where: { id: companyId },
       data: {
-        // We preserve existing history fields and merge featureOverrides
-        historyPreviewFields: {
-          ...((company.historyPreviewFields as Record<string, any>) || {}),
-          __featureOverrides: overrides,
-        },
-      },
+        featureOverrides: overrides as any,
+      } as any,
     });
 
     await PlatformAuditLogService.logAction({

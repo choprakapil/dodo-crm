@@ -19,6 +19,7 @@ import {
 } from "@/lib/validations/custom-field";
 import { NotFoundError, ValidationError, ForbiddenError } from "@/lib/errors";
 import { Prisma } from "@prisma/client";
+import { QuotaService } from "./quota.service";
 
 export class CustomFieldService {
   /**
@@ -77,6 +78,8 @@ export class CustomFieldService {
       throw new ForbiddenError("You do not have permission to create custom fields");
     }
 
+    await QuotaService.assertCanUseFeature(ctx.company.id, "customFields");
+
     const input = customFieldCreateSchema.parse(rawInput);
 
     // Check duplicate key within company and entityType
@@ -93,34 +96,40 @@ export class CustomFieldService {
       throw new ValidationError(`A custom field with key "${input.key}" already exists for ${input.entityType}`);
     }
 
-    const field = await prisma.customField.create({
-      data: {
-        companyId: ctx.company.id,
-        entityType: input.entityType,
-        key: input.key,
-        label: input.label,
-        description: input.description,
-        fieldType: input.fieldType,
-        required: input.required,
-        active: input.active,
-        sortOrder: input.sortOrder,
-        options: (input.options as Prisma.InputJsonValue) ?? Prisma.JsonNull,
-      },
-    });
+    const field = await prisma.$transaction(async (tx) => {
+      await QuotaService.assertLimit(ctx.company.id, "maxCustomFields", 1, tx);
 
-    await prisma.auditLog.create({
-      data: {
-        companyId: ctx.company.id,
-        userId: ctx.user.id,
-        action: "custom_field.create",
-        entityType: "custom_field",
-        entityId: field.id,
-        metadata: {
-          key: field.key,
-          label: field.label,
-          fieldType: field.fieldType,
+      const created = await tx.customField.create({
+        data: {
+          companyId: ctx.company.id,
+          entityType: input.entityType,
+          key: input.key,
+          label: input.label,
+          description: input.description,
+          fieldType: input.fieldType,
+          required: input.required,
+          active: input.active,
+          sortOrder: input.sortOrder,
+          options: (input.options as Prisma.InputJsonValue) ?? Prisma.JsonNull,
         },
-      },
+      });
+
+      await tx.auditLog.create({
+        data: {
+          companyId: ctx.company.id,
+          userId: ctx.user.id,
+          action: "custom_field.create",
+          entityType: "custom_field",
+          entityId: created.id,
+          metadata: {
+            key: input.key,
+            entityType: input.entityType,
+            fieldType: input.fieldType,
+          },
+        },
+      });
+
+      return created;
     });
 
     return field;

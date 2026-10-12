@@ -4,6 +4,8 @@ import { requireSuperAdmin } from "@/lib/auth/super-admin-session";
 import { PlatformLimitService } from "@/lib/services/platform-limit.service";
 import { handleApiError, ValidationError } from "@/lib/errors";
 
+import { limitOverridesSchema } from "@/lib/validations/platform";
+
 export const POST = withObservability(async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -11,10 +13,11 @@ export const POST = withObservability(async function POST(
   try {
     const session = await requireSuperAdmin(req);
     const { id } = await params;
-    const body = await req.json();
+    const body = (await req.json()) as any;
 
-    if (!body.limits || typeof body.limits !== "object") {
-      throw new ValidationError("Limits override object is required.");
+    const parseResult = limitOverridesSchema.safeParse(body?.limits);
+    if (!parseResult.success) {
+      throw new ValidationError("Invalid limit overrides: " + parseResult.error.issues.map((i) => i.message).join(", "));
     }
 
     const ipAddress = req.headers.get("x-forwarded-for")?.split(",")[0].trim() || req.headers.get("x-real-ip") || undefined;
@@ -22,7 +25,7 @@ export const POST = withObservability(async function POST(
 
     const updated = await PlatformLimitService.setCompanyLimitOverrides(
       id,
-      body.limits,
+      parseResult.data,
       session.superAdmin.id,
       { ipAddress, userAgent }
     );

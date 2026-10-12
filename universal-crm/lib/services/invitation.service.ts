@@ -14,6 +14,7 @@ import { EmailTemplates, sendEmail } from "@/lib/services/email";
 import { getAppUrl } from "@/lib/config";
 import { InviteUserInput, AcceptInvitationInput } from "@/lib/validations/invitation";
 import { UserStatus } from "@prisma/client";
+import { QuotaService } from "./quota.service";
 
 export class InvitationService {
   /**
@@ -66,12 +67,24 @@ export class InvitationService {
       throw new ValidationError("A user with this email already exists and is active in this company");
     }
 
+    // Determine if this invitation consumes a new seat (avoid charging already counted invited users)
+    const isAlreadyCountedSeat =
+      existingUser !== null &&
+      existingUser.deletedAt === null &&
+      existingUser.status === UserStatus.INVITED;
+
     // 4. Generate 32-byte secure random token
     const rawToken = generateSecureToken(32);
     const tokenHash = hashToken(rawToken);
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
 
     const { invitation, user } = await prisma.$transaction(async (tx) => {
+      // Enforce user seat quota under exclusive tenant lock
+      if (!isAlreadyCountedSeat) {
+        await QuotaService.assertCanCreateUser(ctx.company.id, 1, tx);
+      } else {
+        await QuotaService.acquireCompanyQuotaLock(ctx.company.id, tx);
+      }
       // Create or update user in INVITED state
       const targetUser = await tx.user.upsert({
         where: {
@@ -152,7 +165,7 @@ export class InvitationService {
     const emailTemplate = EmailTemplates.invitation(rawToken, ctx.user.name, ctx.company.name);
     emailTemplate.to = email;
     const appUrl = getAppUrl();
-    const inviteLink = `${appUrl}/app/invite/${rawToken}`;
+    const inviteLink = `${appUrl}/invite/${rawToken}`;
 
     try {
       await sendEmail(email, emailTemplate.subject, emailTemplate.html, emailTemplate.text);

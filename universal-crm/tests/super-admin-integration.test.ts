@@ -241,6 +241,16 @@ export async function runSuperAdminIntegrationTests() {
   assert.equal(updatedStarter.maxUsers, 15);
   assert.equal(updatedStarter.maxLeads, 5000);
 
+  // Restore starter plan back to canonical catalog defaults
+  await PlatformPlanService.updatePlan(
+    starterPlan.id,
+    {
+      maxUsers: 5,
+      maxLeads: 1000,
+    },
+    platformCtx.superAdmin.id
+  );
+
   // Assign ENTERPRISE plan to company
   const assigned = await PlatformPlanService.assignPlanToCompany(
     provisionResult.company.id,

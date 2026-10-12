@@ -12,6 +12,79 @@ export type SuperAdminLoginInput = z.infer<typeof superAdminLoginSchema>;
 
 export const PlanTiers = ["FREE", "STARTER", "PROFESSIONAL", "ENTERPRISE"] as const;
 
+export const VALID_LIMIT_KEYS = [
+  "maxUsers",
+  "maxLeads",
+  "maxCustomers",
+  "maxTeams",
+  "maxProducts",
+  "maxServices",
+  "maxDispositions",
+  "maxCustomFields",
+] as const;
+
+export type ValidLimitKey = (typeof VALID_LIMIT_KEYS)[number];
+
+export const limitOverrideValueSchema = z
+  .number()
+  .int("Limit override must be an integer")
+  .refine((val) => val === -1 || val >= 0, {
+    message: "Limit override must be non-negative (>= 0), or -1 for unlimited",
+  });
+
+export const limitOverridesSchema = z
+  .record(z.string(), limitOverrideValueSchema)
+  .superRefine((records, ctx) => {
+    for (const k of Object.keys(records)) {
+      if (!(VALID_LIMIT_KEYS as readonly string[]).includes(k)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: `Unknown limit override key: "${k}"`,
+          path: [k],
+        });
+      }
+    }
+  });
+
+export const VALID_FEATURE_KEYS = [
+  "leads",
+  "customers",
+  "deals",
+  "dispositions",
+  "customFields",
+  "offerings",
+  "calling",
+  "emailIntegration",
+  "commentsMentions",
+  "notifications",
+  "analytics",
+  "advancedReports",
+  "export",
+  "teams",
+  "customRoles",
+  "auditLogs",
+  "sessionManagement",
+  "apiAccess",
+  "leadImport",
+  "industryTemplates",
+] as const;
+
+export type ValidFeatureKey = (typeof VALID_FEATURE_KEYS)[number];
+
+export const featureOverridesSchema = z
+  .record(z.string(), z.boolean())
+  .superRefine((records, ctx) => {
+    for (const k of Object.keys(records)) {
+      if (!(VALID_FEATURE_KEYS as readonly string[]).includes(k)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: `Unknown feature override key: "${k}"`,
+          path: [k],
+        });
+      }
+    }
+  });
+
 export const provisionCompanySchema = z
   .object({
     name: z.string().trim().min(2, "Company name must be at least 2 characters").max(100),
@@ -29,8 +102,8 @@ export const provisionCompanySchema = z
     timezone: z.string().trim().default("UTC"),
     currency: z.string().trim().length(3, "Currency must be a 3-letter ISO code").toUpperCase(),
     phone: z.string().trim().max(50).optional(),
-    limitOverrides: z.record(z.string(), z.number()).optional(),
-    featureOverrides: z.record(z.string(), z.boolean()).optional(),
+    limitOverrides: limitOverridesSchema.optional(),
+    featureOverrides: featureOverridesSchema.optional(),
   })
   .strict();
 

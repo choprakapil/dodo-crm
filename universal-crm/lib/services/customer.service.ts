@@ -29,6 +29,7 @@ import {
   ConflictError,
   ForbiddenError,
 } from "@/lib/errors";
+import { QuotaService } from "./quota.service";
 import {
   CustomerQueryInput,
   CustomerCreateInput,
@@ -370,6 +371,8 @@ export class CustomerService {
 
     // 4. Atomic transaction: Customer + CustomerPhone + CustomerEmail + AuditLog
     const result = await prisma.$transaction(async (tx) => {
+      await QuotaService.assertLimit(companyId, "maxCustomers", 1, tx);
+
       const customer = await tx.customer.create({
         data: {
           companyId,

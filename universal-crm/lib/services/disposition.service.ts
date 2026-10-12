@@ -16,6 +16,7 @@ import {
   dispositionUpdateSchema,
 } from "@/lib/validations/disposition";
 import { Disposition, Prisma } from "@prisma/client";
+import { QuotaService } from "./quota.service";
 
 export interface DispositionTreeNode extends Disposition {
   children: DispositionTreeNode[];
@@ -191,6 +192,8 @@ export class DispositionService {
     }
 
     const result = await prisma.$transaction(async (tx) => {
+      await QuotaService.assertLimit(ctx.company.id, "maxDispositions", 1, tx);
+
       // Create initial record
       const created = await tx.disposition.create({
         data: {
